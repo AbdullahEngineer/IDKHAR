@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مسار — نظام الادخار والأهداف المالية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+/* ============ DESIGN TOKENS ============ */
+:root{
+  --navy-950:#0A0E22;
+  --navy-900:#0F1429;
+  --navy-800:#151B38;
+  --navy-700:#1D2548;
+  --navy-600:#293066;
+  --navy-500:#3B4380;
+  --gold-600:#B9852E;
+  --gold-500:#D9A441;
+  --gold-400:#E8C077;
+  --teal-600:#2E8B7C;
+  --teal-500:#3FA796;
+  --teal-400:#6BC7B8;
+  --coral-500:#E2604F;
+  --coral-400:#EB8577;
+  --ink-0:#F4F2EA;
+  --ink-1:#D9D9E6;
+  --ink-muted:#8D93BC;
+  --ink-faint:#5B6190;
+  --line:rgba(244,242,234,0.10);
+  --line-strong:rgba(244,242,234,0.18);
+  --radius-lg:22px;
+  --radius-md:14px;
+  --radius-sm:9px;
+  --font-display:'Cairo',sans-serif;
+  --font-body:'IBM Plex Sans Arabic',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --shadow-card:0 10px 30px rgba(5,7,20,0.35);
+  --ease:cubic-bezier(.22,.9,.32,1);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 700px at 85% -10%, rgba(217,164,65,0.10), transparent 60%),
+    radial-gradient(1000px 600px at -10% 110%, rgba(63,167,150,0.12), transparent 55%),
+    var(--navy-950);
+  color:var(--ink-0);
+  font-family:var(--font-body);
+  font-size:15.5px;
+  line-height:1.65;
+  min-height:100vh;
+}
+h1,h2,h3,h4,.display{font-family:var(--font-display);font-weight:800;letter-spacing:0.2px;}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;}
+::selection{background:var(--gold-500);color:var(--navy-950);}
+:focus-visible{outline:2px solid var(--gold-400);outline-offset:3px;border-radius:6px;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:var(--navy-600);border-radius:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+.hidden{display:none !important;}
+
+/* ============ BUTTONS / FORMS ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 22px;border-radius:999px;border:1px solid transparent;
+  font-weight:700;font-size:14.5px;cursor:pointer;transition:transform .18s var(--ease), box-shadow .18s var(--ease), background .18s;
+  white-space:nowrap;
+}
+.btn:active{transform:scale(0.97);}
+.btn-gold{background:linear-gradient(180deg,var(--gold-400),var(--gold-600));color:var(--navy-950);box-shadow:0 8px 20px rgba(217,164,65,0.28);}
+.btn-gold:hover{box-shadow:0 10px 26px rgba(217,164,65,0.4);}
+.btn-teal{background:linear-gradient(180deg,var(--teal-400),var(--teal-600));color:var(--navy-950);box-shadow:0 8px 20px rgba(63,167,150,0.28);}
+.btn-ghost{background:transparent;border:1px solid var(--line-strong);color:var(--ink-0);}
+.btn-ghost:hover{background:rgba(244,242,234,0.06);}
+.btn-danger{background:transparent;border:1px solid rgba(226,96,79,0.4);color:var(--coral-400);}
+.btn-danger:hover{background:rgba(226,96,79,0.1);}
+.btn-sm{padding:8px 14px;font-size:13px;}
+.btn-block{width:100%;}
+.btn[disabled]{opacity:.45;cursor:not-allowed;}
+
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:13px;color:var(--ink-muted);margin-bottom:7px;font-weight:600;}
+.field input,.field select{
+  width:100%;padding:12px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--line-strong);background:var(--navy-800);
+  color:var(--ink-0);font-family:var(--font-body);font-size:14.5px;transition:border-color .15s;
+}
+.field input.num-input{font-family:var(--font-mono);direction:ltr;text-align:right;}
+.field input:focus,.field select:focus{border-color:var(--gold-500);}
+.field .hint{font-size:12px;color:var(--ink-faint);margin-top:6px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.error-text{color:var(--coral-400);font-size:12.5px;margin-top:6px;display:none;}
+.field.has-error input{border-color:var(--coral-500);}
+.field.has-error .error-text{display:block;}
+
+.chip-group{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  padding:8px 16px;border-radius:999px;border:1px solid var(--line-strong);
+  background:var(--navy-800);color:var(--ink-muted);font-size:13.5px;cursor:pointer;
+  transition:all .15s;font-weight:600;
+}
+.chip.active{background:var(--gold-500);color:var(--navy-950);border-color:var(--gold-500);}
+.chip:hover:not(.active){border-color:var(--gold-500);color:var(--ink-0);}
+
+/* ============ LANDING ============ */
+#view-landing{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+.landing-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 4px 60px;}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:900;font-size:21px;}
+.brand-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(145deg,var(--gold-400),var(--gold-600));display:flex;align-items:center;justify-content:center;color:var(--navy-950);font-weight:900;font-size:18px;box-shadow:0 6px 16px rgba(217,164,65,.3);}
+.landing-nav .links{display:flex;gap:28px;color:var(--ink-muted);font-size:14px;font-weight:600;}
+.landing-nav .links a:hover{color:var(--gold-400);}
+
+.hero{display:grid;grid-template-columns:1.1fr 0.9fr;gap:50px;align-items:center;padding:20px 0 90px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--teal-400);font-size:12.5px;font-weight:700;letter-spacing:.5px;background:rgba(63,167,150,.1);border:1px solid rgba(63,167,150,.3);padding:7px 14px;border-radius:999px;margin-bottom:22px;}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--teal-400);}
+.hero h1{font-size:52px;line-height:1.18;margin:0 0 22px;}
+.hero h1 .accent{color:var(--gold-400);}
+.hero p.lead{font-size:17px;color:var(--ink-1);max-width:520px;margin:0 0 34px;}
+.hero .cta-row{display:flex;gap:14px;align-items:center;}
+.hero .cta-note{font-size:12.5px;color:var(--ink-faint);margin-top:16px;}
+
+/* Signature hero visual: the savings "path" — a winding road of months toward a goal */
+.hero-visual{position:relative;background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow-card);}
+.hero-visual .hv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.hero-visual .hv-label{font-size:12.5px;color:var(--ink-muted);font-weight:600;}
+.hero-visual .hv-name{font-family:var(--font-display);font-weight:800;font-size:17px;margin-top:4px;}
+.hero-visual .hv-pct{font-family:var(--font-mono);font-size:28px;color:var(--gold-400);font-weight:600;}
+.path-wrap{margin-top:18px;}
+.path-wrap svg{width:100%;height:auto;display:block;}
+
+.section-tag{color:var(--gold-400);font-weight:700;font-size:12.5px;letter-spacing:.6px;margin-bottom:10px;}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:34px;flex-wrap:wrap;gap:14px;}
+.section-head h2{font-size:31px;margin:0;max-width:560px;}
+.section-head p{color:var(--ink-muted);max-width:420px;margin:0;font-size:14.5px;}
+
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:90px;}
+.feature-card{background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-md);padding:26px;transition:border-color .2s, transform .2s;}
+.feature-card:hover{border-color:var(--gold-500);transform:translateY(-3px);}
+.feature-card .fc-num{font-family:var(--font-mono);color:var(--ink-faint);font-size:12.5px;margin-bottom:16px;}
+.feature-card h3{font-size:17px;margin:0 0 10px;}
+.feature-card p{color:var(--ink-muted);font-size:13.5px;margin:0;line-height:1.7;}
+
+.formula-band{background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-lg);padding:44px;margin-bottom:90px;display:grid;grid-template-columns:0.9fr 1.1fr;gap:40px;align-items:center;}
+.formula-band .fb-eq{background:var(--navy-900);border:1px solid var(--line-strong);border-radius:var(--radius-md);padding:26px;font-family:var(--font-mono);font-size:14px;color:var(--teal-400);direction:ltr;text-align:left;line-height:2.1;}
+.formula-band .fb-eq .op{color:var(--ink-faint);}
+.formula-band .fb-eq .res{color:var(--gold-400);}
+
+.mock-dash{background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-lg);padding:26px;margin-bottom:90px;box-shadow:var(--shadow-card);}
+.mock-dash .md-grid{display:grid;grid-template-columns:repeat(3,1fr) 1.4fr;gap:16px;}
+.mock-kpi{background:var(--navy-900);border:1px solid var(--line);border-radius:var(--radius-md);padding:18px;}
+.mock-kpi .mk-label{font-size:12px;color:var(--ink-muted);margin-bottom:8px;}
+.mock-kpi .mk-val{font-family:var(--font-mono);font-size:22px;font-weight:600;}
+.mock-chart{background:var(--navy-900);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px;grid-row:span 1;}
+
+.cta-band{text-align:center;padding:70px 20px;border-radius:var(--radius-lg);background:linear-gradient(160deg,var(--navy-800),var(--navy-900));border:1px solid var(--line);margin-bottom:40px;}
+.cta-band h2{font-size:32px;margin:0 0 14px;}
+.cta-band p{color:var(--ink-muted);margin:0 0 30px;}
+
+footer.site-footer{border-top:1px solid var(--line);padding:26px 4px;display:flex;justify-content:space-between;color:var(--ink-faint);font-size:12.5px;}
+
+/* ============ AUTH ============ */
+.auth-shell{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+.auth-side{background:linear-gradient(160deg,var(--navy-900),var(--navy-950));display:flex;flex-direction:column;justify-content:center;padding:70px;position:relative;overflow:hidden;border-left:1px solid var(--line);}
+.auth-side::after{content:"";position:absolute;inset:-40%;background:radial-gradient(500px 500px at 30% 30%, rgba(217,164,65,.12), transparent 60%);}
+.auth-side .quote{font-family:var(--font-display);font-size:26px;line-height:1.5;font-weight:700;max-width:420px;position:relative;}
+.auth-side .quote .g{color:var(--gold-400);}
+.auth-form-col{display:flex;flex-direction:column;justify-content:center;padding:70px;max-width:480px;margin:0 auto;width:100%;}
+.auth-form-col .brand{margin-bottom:40px;}
+.auth-form-col h1{font-size:27px;margin:0 0 8px;}
+.auth-form-col .sub{color:var(--ink-muted);font-size:14px;margin-bottom:32px;}
+.auth-switch{margin-top:22px;text-align:center;font-size:13.5px;color:var(--ink-muted);}
+.auth-switch a{color:var(--gold-400);font-weight:700;}
+.pw-meter{height:4px;border-radius:2px;background:var(--navy-700);margin-top:8px;overflow:hidden;}
+.pw-meter i{display:block;height:100%;width:0%;background:var(--coral-500);transition:all .25s;}
+
+/* ============ ONBOARDING ============ */
+.onb-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;}
+.onb-card{width:100%;max-width:560px;background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-lg);padding:50px;box-shadow:var(--shadow-card);}
+.onb-step{color:var(--ink-faint);font-size:12.5px;font-weight:700;letter-spacing:.5px;margin-bottom:14px;}
+.onb-card h1{font-size:26px;margin:0 0 12px;}
+.onb-card .sub{color:var(--ink-muted);margin-bottom:30px;font-size:14.5px;}
+.big-amount-input{display:flex;align-items:center;gap:10px;background:var(--navy-900);border:1px solid var(--line-strong);border-radius:var(--radius-md);padding:18px 20px;}
+.big-amount-input input{border:none;background:transparent;color:var(--gold-400);font-family:var(--font-mono);font-size:34px;width:100%;outline:none;direction:ltr;text-align:right;}
+.big-amount-input .cur{color:var(--ink-muted);font-size:15px;font-weight:600;}
+
+/* ============ APP SHELL ============ */
+#view-app{display:none;min-height:100vh;grid-template-columns:264px 1fr;}
+#view-app.show{display:grid;}
+.sidebar{background:var(--navy-900);border-left:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+.sidebar .brand{padding:6px 10px 26px;}
+.side-nav{display:flex;flex-direction:column;gap:3px;flex:1;}
+.side-link{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);color:var(--ink-muted);font-weight:600;font-size:14px;cursor:pointer;transition:all .15s;}
+.side-link svg{width:19px;height:19px;flex-shrink:0;}
+.side-link:hover{background:rgba(244,242,234,.05);color:var(--ink-0);}
+.side-link.active{background:linear-gradient(90deg,rgba(217,164,65,.16),rgba(217,164,65,.03));color:var(--gold-400);}
+.side-link.active svg{color:var(--gold-400);}
+.side-foot{border-top:1px solid var(--line);padding-top:16px;margin-top:10px;}
+.side-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;}
+.side-user:hover{background:rgba(244,242,234,.05);}
+.side-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,var(--teal-400),var(--teal-600));display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--navy-950);font-size:13px;}
+.side-user .su-name{font-size:13.5px;font-weight:700;}
+.side-user .su-email{font-size:11.5px;color:var(--ink-faint);}
+.logout-link{font-size:12px;color:var(--ink-faint);margin-top:10px;display:block;padding:4px 10px;}
+.logout-link:hover{color:var(--coral-400);}
+
+.main-area{padding:34px 40px 60px;max-width:1200px;width:100%;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
+.topbar h1{font-size:25px;margin:0;}
+.topbar .tb-sub{color:var(--ink-muted);font-size:13.5px;margin-top:4px;}
+.month-pill{display:flex;align-items:center;gap:10px;background:var(--navy-800);border:1px solid var(--line-strong);padding:9px 16px;border-radius:999px;font-size:13px;font-weight:700;color:var(--ink-1);}
+.month-pill .num{color:var(--gold-400);}
+
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:26px;}
+.kpi-card{background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-md);padding:22px 24px;position:relative;overflow:hidden;}
+.kpi-card .kc-label{font-size:12.5px;color:var(--ink-muted);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.kpi-card .kc-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.kpi-card .kc-icon svg{width:16px;height:16px;}
+.kpi-card.income .kc-icon{background:rgba(63,167,150,.16);color:var(--teal-400);}
+.kpi-card.expense .kc-icon{background:rgba(226,96,79,.16);color:var(--coral-400);}
+.kpi-card.surplus .kc-icon{background:rgba(217,164,65,.16);color:var(--gold-400);}
+.kpi-card .kc-val{font-family:var(--font-mono);font-size:29px;font-weight:600;}
+.kpi-card .kc-note{font-size:12px;color:var(--ink-faint);margin-top:8px;}
+.kpi-card.surplus.deficit .kc-val{color:var(--coral-400);}
+.kpi-card.surplus:not(.deficit) .kc-val{color:var(--gold-400);}
+
+.grid-2{display:grid;grid-template-columns:1.1fr 0.9fr;gap:18px;margin-bottom:18px;}
+.card{background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-md);padding:24px;}
+.card h3{font-size:16px;margin:0 0 4px;}
+.card .card-sub{color:var(--ink-faint);font-size:12.5px;margin-bottom:18px;}
+.chart-box{position:relative;height:230px;}
+.chart-box.tall{height:270px;}
+
+.legend-list{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.legend-item{display:flex;align-items:center;gap:10px;font-size:13px;}
+.legend-item .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.legend-item .li-name{flex:1;color:var(--ink-1);}
+.legend-item .li-val{font-family:var(--font-mono);color:var(--ink-muted);}
+
+/* Goal path signature element */
+.goal-card{background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;}
+.goal-card .gc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.goal-card h3{font-size:18px;margin:0;}
+.goal-card .gc-tag{font-size:11.5px;color:var(--ink-faint);}
+.status-badge{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:999px;}
+.status-badge.ok{background:rgba(63,167,150,.15);color:var(--teal-400);}
+.status-badge.warn{background:rgba(226,96,79,.15);color:var(--coral-400);}
+.goal-nums{display:flex;gap:24px;margin:16px 0 10px;flex-wrap:wrap;}
+.goal-nums .gn{}
+.goal-nums .gn-label{font-size:11.5px;color:var(--ink-faint);margin-bottom:3px;}
+.goal-nums .gn-val{font-family:var(--font-mono);font-size:17px;font-weight:600;}
+.goal-suggestion{background:rgba(226,96,79,.08);border:1px solid rgba(226,96,79,.25);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--coral-400);margin-top:14px;line-height:1.7;}
+.goal-actions{display:flex;gap:10px;margin-top:16px;}
+
+/* Tables / lists */
+.item-list{display:flex;flex-direction:column;gap:10px;}
+.item-row{display:flex;align-items:center;gap:16px;background:var(--navy-800);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px 18px;transition:border-color .15s;}
+.item-row:hover{border-color:var(--line-strong);}
+.item-row .ir-icon{width:42px;height:42px;border-radius:11px;background:var(--navy-700);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;}
+.item-row .ir-main{flex:1;min-width:0;}
+.item-row .ir-title{font-weight:700;font-size:14.5px;margin-bottom:3px;}
+.item-row .ir-meta{font-size:12px;color:var(--ink-faint);display:flex;gap:8px;flex-wrap:wrap;}
+.item-row .ir-tag{background:var(--navy-700);padding:2px 9px;border-radius:999px;}
+.item-row .ir-amount{font-family:var(--font-mono);font-size:16px;font-weight:600;white-space:nowrap;}
+.item-row.expense .ir-amount{color:var(--coral-400);}
+.item-row.income .ir-amount{color:var(--teal-400);}
+.item-row .ir-actions{display:flex;gap:6px;}
+.icon-btn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line-strong);background:transparent;color:var(--ink-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.icon-btn:hover{border-color:var(--gold-500);color:var(--gold-400);}
+.icon-btn.danger:hover{border-color:var(--coral-500);color:var(--coral-400);}
+.icon-btn svg{width:15px;height:15px;}
+
+.list-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:14px;flex-wrap:wrap;}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink-faint);}
+.empty-state .es-icon{font-size:38px;margin-bottom:14px;opacity:.6;}
+.empty-state h4{color:var(--ink-1);font-size:16px;margin:0 0 8px;}
+.empty-state p{font-size:13.5px;margin:0 0 20px;}
+
+.progress-track{height:8px;border-radius:999px;background:var(--navy-700);overflow:hidden;margin:10px 0;}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold-500),var(--gold-400));transition:width .5s var(--ease);}
+.progress-fill.deficit{background:linear-gradient(90deg,var(--coral-500),var(--coral-400));}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(6,8,20,.65);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--navy-800);border:1px solid var(--line-strong);border-radius:var(--radius-lg);padding:34px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-card);animation:modalIn .22s var(--ease);}
+@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:none;}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+.modal-head h3{font-size:18px;margin:0;}
+.modal-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--navy-700);color:var(--ink-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.modal-close:hover{background:var(--navy-600);color:var(--ink-0);}
+.modal-foot{display:flex;gap:10px;margin-top:8px;}
+
+.toast-stack{position:fixed;bottom:24px;left:24px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+.toast{background:var(--navy-700);border:1px solid var(--line-strong);border-right:3px solid var(--teal-400);padding:14px 18px;border-radius:var(--radius-sm);font-size:13.5px;box-shadow:var(--shadow-card);animation:toastIn .25s var(--ease);min-width:240px;}
+.toast.warn{border-right-color:var(--coral-500);}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+
+/* Responsive */
+@media (max-width:1080px){
+  .hero{grid-template-columns:1fr;}
+  .feature-grid{grid-template-columns:1fr 1fr;}
+  .formula-band{grid-template-columns:1fr;}
+  .mock-dash .md-grid{grid-template-columns:1fr 1fr;}
+  .grid-2{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:1fr;}
+  #view-app{grid-template-columns:1fr;}
+  .sidebar{position:relative;height:auto;flex-direction:row;align-items:center;overflow-x:auto;}
+  .sidebar .brand{padding:6px 14px 6px 0;}
+  .side-nav{flex-direction:row;}
+  .side-foot{display:none;}
+  .auth-shell{grid-template-columns:1fr;}
+  .auth-side{display:none;}
+  .profile-grid{grid-template-columns:1fr;}
+}
+@media (max-width:640px){
+  .feature-grid{grid-template-columns:1fr;}
+  .hero h1{font-size:36px;}
+  .main-area{padding:24px 16px 50px;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= LANDING ======================= -->
+<div id="view-landing">
+  <div class="landing-nav">
+    <div class="brand"><div class="brand-mark">م</div>مسار</div>
+    <div class="links">
+      <a href="#features">الخصائص</a>
+      <a href="#how">آلية العمل</a>
+      <a href="#preview">لوحة التحكم</a>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost btn-sm" data-action="go" data-route="login">تسجيل الدخول</button>
+      <button class="btn btn-gold btn-sm" data-action="go" data-route="signup">ابدأ مجاناً</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> محرك حسابي يعيد التوازن لميزانيتك تلقائياً</div>
+      <h1>ارسم <span class="accent">مسارك المالي</span>، وخلّه يوصلك لهدفك</h1>
+      <p class="lead">مسار يجمع دخلك ومصاريفك وأهدافك في مكان واحد، ويحسب لك كل شهر إذا كنت على الطريق الصحيح — وإذا انحرفت، يقترح عليك بالضبط كم شهر تزيد أو كم ريال تقلل.</p>
+      <div class="cta-row">
+        <button class="btn btn-gold" data-action="go" data-route="signup">أنشئ حسابك الآن</button>
+        <button class="btn btn-ghost" data-action="go" data-route="login">لدي حساب بالفعل</button>
+      </div>
+      <div class="cta-note">لا حاجة لبطاقة ائتمان · إعداد الحساب يستغرق دقيقتين</div>
+    </div>
+    <div class="hero-visual">
+      <div class="hv-top">
+        <div>
+          <div class="hv-label">هدف نشط</div>
+          <div class="hv-name">دفعة أولى — شقة</div>
+        </div>
+        <div class="hv-pct">62%</div>
+      </div>
+      <div class="path-wrap" id="heroPath"></div>
+    </div>
+  </div>
+
+  <div id="features">
+    <div class="section-head">
+      <div>
+        <div class="section-tag">الخصائص</div>
+        <h2>كل ما تحتاجه لتضبط ميزانيتك</h2>
+      </div>
+      <p>من أول ريال دخل، إلى آخر ريال يفصلك عن هدفك — مسار يتابع كل حركة.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="fc-num">01</div><h3>تتبع الدخل والمصاريف</h3><p>سجّل كل مصادر دخلك ومصاريفك الثابتة والمتغيرة، مع جدولة تلقائية للمصاريف الممتدة عبر الأشهر.</p></div>
+      <div class="feature-card"><div class="fc-num">02</div><h3>أهداف مالية ذكية</h3><p>حدد هدفك والمدة، ودع المحرك الحسابي يخبرك إن كان قابلاً للتحقيق أو يحتاج تعديل خطة.</p></div>
+      <div class="feature-card"><div class="fc-num">03</div><h3>تنبيهات العجز الفوري</h3><p>إذا زادت مصاريفك عن دخلك، يقترح عليك النظام فوراً: تمديد المدة أو تقليل مبلغ محدد.</p></div>
+      <div class="feature-card"><div class="fc-num">04</div><h3>رسوم بيانية تفاعلية</h3><p>مخطط دائري لتوزيع المصاريف، ومخطط خطي يتوقع نمو مدخراتك في الأشهر القادمة.</p></div>
+      <div class="feature-card"><div class="fc-num">05</div><h3>تعدد مصادر الدخل</h3><p>راتب أساسي، عمل حر، استثمارات — أضف كل مصدر بتكراره الخاص وتاريخ استحقاقه.</p></div>
+      <div class="feature-card"><div class="fc-num">06</div><h3>سجل إدخار لكل هدف</h3><p>وثّق كل مبلغ تدخره وشاهد نسبة تقدمك تتحرك في الوقت الفعلي.</p></div>
+    </div>
+  </div>
+
+  <div id="how" class="formula-band">
+    <div>
+      <div class="section-tag">آلية الحساب</div>
+      <h2 style="font-size:26px;margin:0 0 14px;">معادلة بسيطة، قرارات أوضح</h2>
+      <p style="color:var(--ink-muted);font-size:14.5px;margin:0;">كل شهر، يطرح مسار مصاريفك من دخلك ليحسب فائضك المتاح للإدخار، ثم يقارنه بما يحتاجه كل هدف من مبلغ شهري ليصل في الوقت المحدد.</p>
+    </div>
+    <div class="fb-eq">
+      S<span class="op">available</span> = I<span class="op">total</span> − E<span class="op">total</span><br>
+      <span class="op">// الإدخار الشهري المطلوب للهدف</span><br>
+      Req = (Target − Current) / Months<br><br>
+      <span class="op">if</span> S<span class="op">available</span> ≥ Req → <span class="res">✓ الهدف قابل للتحقيق</span><br>
+      <span class="op">if</span> S<span class="op">available</span> &lt; Req → <span class="res" style="color:var(--coral-400)">⚠ عجز = Req − S</span>
+    </div>
+  </div>
+
+  <div id="preview" class="mock-dash">
+    <div class="section-head" style="margin-bottom:22px;">
+      <div><div class="section-tag">معاينة</div><h2 style="font-size:24px;margin:0;">لوحة تحكم واحدة تلخّص كل شيء</h2></div>
+    </div>
+    <div class="md-grid">
+      <div class="mock-kpi"><div class="mk-label">الدخل الشهري</div><div class="mk-val num" style="color:var(--teal-400)">12,500</div></div>
+      <div class="mock-kpi"><div class="mk-label">المصاريف الشهرية</div><div class="mk-val num" style="color:var(--coral-400)">8,150</div></div>
+      <div class="mock-kpi"><div class="mk-label">الفائض القابل للإدخار</div><div class="mk-val num" style="color:var(--gold-400)">4,350</div></div>
+      <div class="mock-chart"><canvas id="landingChart" height="90"></canvas></div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <h2>ابدأ برسم مسارك اليوم</h2>
+    <p>دقيقتان لإعداد حسابك، وبقية الرحلة يتولاها المحرك الحسابي.</p>
+    <button class="btn btn-gold" data-action="go" data-route="signup">إنشاء حساب مجاني</button>
+  </div>
+
+  <footer class="site-footer">
+    <div>© 2026 مسار — نظام مراقبة الادخار والأهداف المالية</div>
+    <div>بُني كمشروع توضيحي</div>
+  </footer>
+</div>
+
+<!-- ======================= SIGNUP ======================= -->
+<div id="view-signup" class="hidden">
+  <div class="auth-shell">
+    <div class="auth-side">
+      <div class="quote">"ما يُقاس <span class="g">يُدار</span>. مسار يخليك تشوف كل ريال، من أول ما يدخل جيبك إلى ما يوصل هدفك."</div>
+    </div>
+    <div class="auth-form-col">
+      <div class="brand"><div class="brand-mark">م</div>مسار</div>
+      <h1>أنشئ حسابك</h1>
+      <div class="sub">تستغرق العملية أقل من دقيقتين</div>
+      <form id="signupForm" novalidate>
+        <div class="field" id="f-name">
+          <label>الاسم الكامل</label>
+          <input type="text" id="su-name" placeholder="مثال: سارة العتيبي" autocomplete="name">
+          <div class="error-text">فضلاً أدخل اسمك الكامل</div>
+        </div>
+        <div class="field" id="f-email">
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="su-email" placeholder="name@example.com" autocomplete="email" dir="ltr" style="text-align:right;">
+          <div class="error-text">صيغة البريد الإلكتروني غير صحيحة</div>
+        </div>
+        <div class="field" id="f-pass">
+          <label>كلمة المرور</label>
+          <input type="password" id="su-pass" placeholder="8 خانات على الأقل، حروف وأرقام" autocomplete="new-password">
+          <div class="pw-meter"><i id="pwBar"></i></div>
+          <div class="error-text">يجب ألا تقل عن 8 خانات وتحتوي حروفاً وأرقاماً</div>
+        </div>
+        <div class="field">
+          <label>العملة المفضلة</label>
+          <select id="su-currency">
+            <option value="ر.س">ريال سعودي (ر.س)</option>
+            <option value="د.إ">درهم إماراتي (د.إ)</option>
+            <option value="د.ك">دينار كويتي (د.ك)</option>
+            <option value="$">دولار أمريكي ($)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block">تسجيل</button>
+      </form>
+      <div class="auth-switch">لديك حساب؟ <a data-action="go" data-route="login">سجّل الدخول</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= LOGIN ======================= -->
+<div id="view-login" class="hidden">
+  <div class="auth-shell">
+    <div class="auth-side">
+      <div class="quote">"الفائض القابل للإدخار = الدخل − المصاريف. <span class="g">مسار</span> يحسبها لك كل شهر، أوتوماتيكياً."</div>
+    </div>
+    <div class="auth-form-col">
+      <div class="brand"><div class="brand-mark">م</div>مسار</div>
+      <h1>تسجيل الدخول</h1>
+      <div class="sub">أهلاً بعودتك — تابع من حيث توقفت</div>
+      <form id="loginForm" novalidate>
+        <div class="field" id="lf-email">
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="li-email" placeholder="name@example.com" dir="ltr" style="text-align:right;">
+          <div class="error-text">لا يوجد حساب بهذا البريد — جرّب إنشاء حساب جديد</div>
+        </div>
+        <div class="field" id="lf-pass">
+          <label>كلمة المرور</label>
+          <input type="password" id="li-pass" placeholder="••••••••">
+          <div class="error-text">كلمة المرور غير صحيحة</div>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block">دخول</button>
+      </form>
+      <div class="auth-switch">ليس لديك حساب؟ <a data-action="go" data-route="signup">أنشئ حساباً</a></div>
+      <div class="auth-switch" style="margin-top:6px;"><a data-action="demoLogin">تجربة بحساب توضيحي جاهز →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= ONBOARDING ======================= -->
+<div id="view-onboarding" class="hidden">
+  <div class="onb-shell">
+    <div class="onb-card">
+      <div class="onb-step">الإعداد الأولي · خطوة 1 من 1</div>
+      <h1>وش راتبك الأساسي الشهري؟</h1>
+      <div class="sub">هذا الرقم يساعدنا نجهّز لوحة التحكم فوراً. تقدر تضيف مصادر دخل ثانية لاحقاً.</div>
+      <div class="field">
+        <label>الدخل الشهري الأساسي</label>
+        <div class="big-amount-input">
+          <span class="cur" id="onbCur">ر.س</span>
+          <input type="text" inputmode="decimal" id="onb-income" placeholder="0">
+        </div>
+        <div class="error-text" id="onb-err" style="display:none;">فضلاً أدخل قيمة صحيحة أكبر من صفر</div>
+      </div>
+      <div class="field">
+        <label>هل هذا الدخل متكرر شهرياً؟</label>
+        <div class="chip-group">
+          <div class="chip active" data-val="monthly" data-action="selectOnbFreq">نعم، شهري ثابت</div>
+          <div class="chip" data-val="irregular" data-action="selectOnbFreq">غير منتظم</div>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-block" data-action="completeOnboarding">متابعة إلى لوحة التحكم</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= APP SHELL ======================= -->
+<div id="view-app">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">م</div>مسار</div>
+    <nav class="side-nav">
+      <div class="side-link" data-route="dashboard" data-action="go" data-route="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        الرئيسية
+      </div>
+      <div class="side-link" data-route="income" data-action="go" data-route="income">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M17 8a4 4 0 00-4-3H10a3.5 3.5 0 000 7h4a3.5 3.5 0 010 7h-3a4 4 0 01-4-3"/></svg>
+        إدارة الدخل
+      </div>
+      <div class="side-link" data-route="expenses" data-action="go" data-route="expenses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+        المصاريف
+      </div>
+      <div class="side-link" data-route="goals" data-action="go" data-route="goals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+        الأهداف المالية
+      </div>
+      <div class="side-link" data-route="reports" data-action="go" data-route="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+        التقارير
+      </div>
+      <div class="side-link" data-route="profile" data-action="go" data-route="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        الملف الشخصي
+      </div>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user" data-action="go" data-route="profile">
+        <div class="side-avatar" id="sideAvatar">؟</div>
+        <div>
+          <div class="su-name" id="sideName">—</div>
+          <div class="su-email" id="sideEmail">—</div>
+        </div>
+      </div>
+      <a class="logout-link" data-action="logout">تسجيل الخروج</a>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <!-- DASHBOARD -->
+    <section id="page-dashboard" class="page hidden">
+      <div class="topbar">
+        <div><h1>مرحباً، <span id="dashUserName">—</span> 👋</h1><div class="tb-sub">هذا ملخص وضعك المالي لهذا الشهر</div></div>
+        <div class="month-pill">📅 <span id="curMonthLabel" class="num"></span></div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card income">
+          <div class="kc-label"><div class="kc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>إجمالي الدخل الشهري</div>
+          <div class="kc-val num" id="kpiIncome">0</div>
+          <div class="kc-note" id="kpiIncomeNote">من مصادر الدخل النشطة</div>
+        </div>
+        <div class="kpi-card expense">
+          <div class="kc-label"><div class="kc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>إجمالي المصاريف الشهرية</div>
+          <div class="kc-val num" id="kpiExpense">0</div>
+          <div class="kc-note" id="kpiExpenseNote">عبر كل التصنيفات</div>
+        </div>
+        <div class="kpi-card surplus" id="kpiSurplusCard">
+          <div class="kc-label"><div class="kc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 9l7-7 7 7M5 15l7 7 7-7" opacity="0"/><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>الفائض القابل للإدخار</div>
+          <div class="kc-val num" id="kpiSurplus">0</div>
+          <div class="kc-note" id="kpiSurplusNote">الدخل − المصاريف</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>توزيع المصاريف حسب التصنيف</h3>
+          <div class="card-sub">نسبة كل تصنيف من إجمالي مصاريف الشهر</div>
+          <div style="display:flex;gap:20px;align-items:center;">
+            <div class="chart-box" style="flex:1;"><canvas id="chartExpensePie"></canvas></div>
+            <div class="legend-list" id="expenseLegend" style="flex:1;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>المصاريف عبر الأشهر القادمة</h3>
+          <div class="card-sub">توزيع المصاريف الممتدة للأشهر الستة القادمة</div>
+          <div class="chart-box"><canvas id="chartExpenseBar"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="grid-column:1/-1;">
+          <h3>توقّع نمو المدخرات</h3>
+          <div class="card-sub">إسقاط تراكمي للفائض الشهري على مدار الأشهر القادمة</div>
+          <div class="chart-box tall"><canvas id="chartProjection"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="list-toolbar" style="margin-bottom:14px;">
+          <h3 style="margin:0;">أهدافك المالية</h3>
+          <button class="btn btn-ghost btn-sm" data-action="go" data-route="goals">عرض الكل ←</button>
+        </div>
+        <div id="dashGoalsPreview"></div>
+      </div>
+    </section>
+
+    <!-- INCOME -->
+    <section id="page-income" class="page hidden">
+      <div class="topbar">
+        <div><h1>إدارة الدخل</h1><div class="tb-sub">أضف كل مصادر دخلك وتابع تكرارها</div></div>
+        <button class="btn btn-gold" data-action="openIncomeModal">+ إضافة مصدر دخل</button>
+      </div>
+      <div class="card" style="margin-bottom:18px;">
+        <h3 style="margin:0 0 4px;">إجمالي الدخل الشهري الحالي</h3>
+        <div class="kc-val num" id="incomeTotalDisplay" style="color:var(--teal-400);font-size:32px;">0</div>
+      </div>
+      <div id="incomeList" class="item-list"></div>
+    </section>
+
+    <!-- EXPENSES -->
+    <section id="page-expenses" class="page hidden">
+      <div class="topbar">
+        <div><h1>المصاريف</h1><div class="tb-sub">سجّل مصاريفك الثابتة والمتغيرة وتابع جدولتها</div></div>
+        <button class="btn btn-gold" data-action="openExpenseModal">+ إضافة مصروف</button>
+      </div>
+      <div class="list-toolbar">
+        <div class="chip-group" id="expenseFilterChips">
+          <div class="chip active" data-cat="all" data-action="filterExpenses">الكل</div>
+        </div>
+        <div class="kc-val num" id="expenseTotalDisplay" style="color:var(--coral-400);font-size:20px;">0</div>
+      </div>
+      <div id="expenseList" class="item-list"></div>
+    </section>
+
+    <!-- GOALS -->
+    <section id="page-goals" class="page hidden">
+      <div class="topbar">
+        <div><h1>الأهداف المالية</h1><div class="tb-sub">تابع تقدمك نحو كل هدف ادخاري</div></div>
+        <button class="btn btn-gold" data-action="openGoalModal">+ هدف جديد</button>
+      </div>
+      <div id="goalsList"></div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="page-reports" class="page hidden">
+      <div class="topbar">
+        <div><h1>التقارير والتحليلات</h1><div class="tb-sub">نظرة أعمق على أنماط دخلك وصرفك وادخارك</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>المصاريف حسب التصنيف</h3>
+          <div class="card-sub">توزيع تفصيلي لهذا الشهر</div>
+          <div class="chart-box tall"><canvas id="reportPie"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>ثابت مقابل متغير</h3>
+          <div class="card-sub">مقارنة المصاريف الثابتة والمتغيرة</div>
+          <div class="chart-box tall"><canvas id="reportFixedVar"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:18px;">
+        <h3>الدخل والمصاريف والفائض — آخر 6 أشهر متوقعة</h3>
+        <div class="card-sub">مقارنة شهرية مركّبة</div>
+        <div class="chart-box tall"><canvas id="reportCombo"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>تقدم الأهداف مجتمعة</h3>
+        <div class="card-sub">نسبة الإنجاز لكل هدف نشط</div>
+        <div class="chart-box tall"><canvas id="reportGoals"></canvas></div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="page-profile" class="page hidden">
+      <div class="topbar"><div><h1>الملف الشخصي</h1><div class="tb-sub">بيانات حسابك وتفضيلاتك</div></div></div>
+      <div class="profile-grid">
+        <div class="card">
+          <h3>البيانات الأساسية</h3>
+          <div class="field"><label>الاسم الكامل</label><input type="text" id="prof-name"></div>
+          <div class="field"><label>البريد الإلكتروني</label><input type="email" id="prof-email" dir="ltr" style="text-align:right;" disabled></div>
+          <div class="field"><label>العملة المفضلة</label>
+            <select id="prof-currency">
+              <option value="ر.س">ريال سعودي (ر.س)</option>
+              <option value="د.إ">درهم إماراتي (د.إ)</option>
+              <option value="د.ك">دينار كويتي (د.ك)</option>
+              <option value="$">دولار أمريكي ($)</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" data-action="saveProfile">حفظ التغييرات</button>
+        </div>
+        <div class="card">
+          <h3>ملخص الحساب</h3>
+          <div class="item-row" style="margin-bottom:10px;"><div class="ir-main"><div class="ir-title">مصادر الدخل</div></div><div class="ir-amount num" id="profCountIncome">0</div></div>
+          <div class="item-row" style="margin-bottom:10px;"><div class="ir-main"><div class="ir-title">المصاريف المسجّلة</div></div><div class="ir-amount num" id="profCountExpense">0</div></div>
+          <div class="item-row"><div class="ir-main"><div class="ir-title">الأهداف النشطة</div></div><div class="ir-amount num" id="profCountGoals">0</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ======================= MODALS ======================= -->
+<div class="modal-overlay hidden" id="modalIncome">
+  <div class="modal">
+    <div class="modal-head"><h3 id="incomeModalTitle">إضافة مصدر دخل</h3><button class="modal-close" data-action="closeModal" data-modal="modalIncome">✕</button></div>
+    <form id="incomeForm">
+      <input type="hidden" id="income-id">
+      <div class="field"><label>مسمى مصدر الدخل</label><input type="text" id="income-name" placeholder="مثال: راتب أساسي"></div>
+      <div class="field"><label>المبلغ</label><input type="text" inputmode="decimal" class="num-input" id="income-amount" placeholder="0"></div>
+      <div class="field"><label>نوع التكرار</label>
+        <select id="income-recurrence">
+          <option value="monthly">شهري ثابت</option>
+          <option value="limited">يتكرر لعدد أشهر محدد</option>
+          <option value="irregular">غير منتظم</option>
+        </select>
+      </div>
+      <div class="field hidden" id="income-months-field"><label>عدد الأشهر</label><input type="number" min="1" id="income-months" placeholder="مثال: 6"></div>
+      <div class="field"><label>تاريخ الاستحقاق الشهري (يوم من الشهر)</label><input type="number" min="1" max="31" id="income-day" placeholder="مثال: 27"></div>
+      <div class="modal-foot"><button type="submit" class="btn btn-gold btn-block">حفظ</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalExpense">
+  <div class="modal">
+    <div class="modal-head"><h3 id="expenseModalTitle">إضافة مصروف</h3><button class="modal-close" data-action="closeModal" data-modal="modalExpense">✕</button></div>
+    <form id="expenseForm">
+      <input type="hidden" id="expense-id">
+      <div class="field"><label>اسم المصروف</label><input type="text" id="expense-name" placeholder="مثال: إيجار الشقة"></div>
+      <div class="field-row">
+        <div class="field"><label>المبلغ</label><input type="text" inputmode="decimal" class="num-input" id="expense-amount" placeholder="0"></div>
+        <div class="field"><label>التصنيف</label>
+          <select id="expense-category">
+            <option value="سكن">سكن</option>
+            <option value="فواتير">فواتير</option>
+            <option value="تسوق">تسوق</option>
+            <option value="ترفيه">ترفيه</option>
+            <option value="التزامات">التزامات</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>نوع المصروف</label>
+        <div class="chip-group">
+          <div class="chip active" data-val="fixed" data-action="selectChip" data-target="expense-type">ثابت</div>
+          <div class="chip" data-val="variable" data-action="selectChip" data-target="expense-type">متغير</div>
+        </div>
+        <input type="hidden" id="expense-type" value="fixed">
+      </div>
+      <div class="field-row">
+        <div class="field"><label>مدة المصروف (أشهر)</label><input type="number" min="1" id="expense-duration" placeholder="مثال: 12" value="1"></div>
+        <div class="field"><label>شهر البداية</label><input type="month" id="expense-start"></div>
+      </div>
+      <div class="modal-foot"><button type="submit" class="btn btn-gold btn-block">حفظ</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalGoal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="goalModalTitle">هدف مالي جديد</h3><button class="modal-close" data-action="closeModal" data-modal="modalGoal">✕</button></div>
+    <form id="goalForm">
+      <input type="hidden" id="goal-id">
+      <div class="field"><label>اسم الهدف</label><input type="text" id="goal-name" placeholder="مثال: صندوق الطوارئ"></div>
+      <div class="field-row">
+        <div class="field"><label>المبلغ المستهدف</label><input type="text" inputmode="decimal" class="num-input" id="goal-target" placeholder="0"></div>
+        <div class="field"><label>المبلغ المدخر حالياً</label><input type="text" inputmode="decimal" class="num-input" id="goal-current" placeholder="0" value="0"></div>
+      </div>
+      <div class="field"><label>المدة المستهدفة (أشهر)</label><input type="number" min="1" id="goal-months" placeholder="مثال: 12"></div>
+      <div class="modal-foot"><button type="submit" class="btn btn-gold btn-block">حفظ الهدف</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalDeposit">
+  <div class="modal">
+    <div class="modal-head"><h3>إضافة إدخار</h3><button class="modal-close" data-action="closeModal" data-modal="modalDeposit">✕</button></div>
+    <form id="depositForm">
+      <input type="hidden" id="deposit-goal-id">
+      <div class="field"><label>المبلغ المقتطع هذا الشهر</label><input type="text" inputmode="decimal" class="num-input" id="deposit-amount" placeholder="0"></div>
+      <div class="modal-foot"><button type="submit" class="btn btn-teal btn-block">تأكيد الإيداع</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =========================================================================
+   SECURITY: HTML ESCAPING
+   Every piece of user-supplied text that gets inserted via innerHTML MUST
+   pass through esc() first. This is what closes the stored-XSS hole that
+   existed when user input (income/expense/goal names) was interpolated
+   directly into innerHTML and into onclick="...JSON.stringify(x)..." strings.
+========================================================================= */
+function esc(str){
+  if(str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+
+/* Wraps `new Chart(...)` so a CDN hiccup that leaves Chart.js undefined
+   degrades to "no chart shown" instead of an uncaught ReferenceError that
+   aborts the rest of the page render (dashboard/reports have several
+   charts in sequence — one missing library shouldn't blank the whole page). */
+function safeChart(ctx, config){
+  if(typeof Chart === 'undefined'){
+    console.error('Chart.js غير محمّل — تعذر رسم هذا المخطط، لكن باقي الصفحة تعمل بشكل طبيعي.');
+    return null;
+  }
+  return new Chart(ctx, config);
+}
+
+/* =========================================================================
+   SUPABASE CLIENT (real backend: Postgres + Auth with password hashing + JWT)
+   Fill in SUPABASE_URL / SUPABASE_ANON_KEY in config.js (see config.example.js
+   and schema.sql in the project root for full setup instructions).
+========================================================================= */
+const sb = (window.SUPABASE_URL && window.SUPABASE_ANON_KEY)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+
+if(!sb){
+  console.error('لم يتم ضبط Supabase بعد. أنشئ ملف config.js من config.example.js وضع فيه بيانات مشروعك.');
+}
+
+/* =========================================================================
+   DB LAYER — thin mapping between our camelCase JS objects and Supabase's
+   snake_case Postgres columns, plus small CRUD wrappers. Every table has
+   Row Level Security enabled (see schema.sql) so these queries only ever
+   see/touch the signed-in user's own rows — enforced server-side, not by
+   client code.
+========================================================================= */
+const db = {
+  income: {
+    fromDb: r => ({id:r.id, name:r.name, amount:Number(r.amount), recurrence:r.recurrence, months:r.months, day:r.day, createdMonthIdx:r.created_month_idx, revisions:r.revisions||[]}),
+    toDb: i => ({name:i.name, amount:i.amount, recurrence:i.recurrence, months:i.months, day:i.day, created_month_idx:i.createdMonthIdx, revisions:i.revisions||[]}),
+  },
+  expenses: {
+    fromDb: r => ({id:r.id, name:r.name, amount:Number(r.amount), category:r.category, type:r.type, duration:r.duration, startMonthIdx:r.start_month_idx, revisions:r.revisions||[]}),
+    toDb: e => ({name:e.name, amount:e.amount, category:e.category, type:e.type, duration:e.duration, start_month_idx:e.startMonthIdx, revisions:e.revisions||[]}),
+  },
+  goals: {
+    fromDb: r => ({id:r.id, name:r.name, target:Number(r.target), current:Number(r.current), months:r.months, startMonthIdx:r.start_month_idx, deposits:r.deposits||[]}),
+    toDb: g => ({name:g.name, target:g.target, current:g.current, months:g.months, start_month_idx:g.startMonthIdx, deposits:g.deposits||[]}),
+  },
+  async loadAll(){
+    const [{data:profile}, {data:income, error:incErr}, {data:expenses, error:expErr}, {data:goals, error:goalErr}] = await Promise.all([
+      sb.from('profiles').select('*').maybeSingle(),
+      sb.from('income').select('*').order('id'),
+      sb.from('expenses').select('*').order('id'),
+      sb.from('goals').select('*').order('id'),
+    ]);
+    if(incErr||expErr||goalErr) console.error(incErr||expErr||goalErr);
+    state.user = profile ? {id:profile.id, name:profile.name, email:state.session.user.email, currency:profile.currency} : null;
+    state.onboarded = !!(profile && profile.onboarded);
+    state.income = (income||[]).map(this.income.fromDb);
+    state.expenses = (expenses||[]).map(this.expenses.fromDb);
+    state.goals = (goals||[]).map(this.goals.fromDb);
+  },
+  async insert(table, obj){
+    const {data, error} = await sb.from(table).insert(db[table].toDb(obj)).select().single();
+    if(error) throw error;
+    return db[table].fromDb(data);
+  },
+  async update(table, id, obj){
+    const {error} = await sb.from(table).update(db[table].toDb(obj)).eq('id', id);
+    if(error) throw error;
+  },
+  async remove(table, id){
+    const {error} = await sb.from(table).delete().eq('id', id);
+    if(error) throw error;
+  },
+};
+function dbErrorToast(err){
+  console.error(err);
+  toast('حدث خطأ أثناء الاتصال بقاعدة البيانات، حاول مرة أخرى', true);
+}
+
+/* =========================================================================
+   DATA MODEL
+========================================================================= */
+const CATEGORY_META = {
+  'سكن':      {color:'#D9A441', icon:'🏠'},
+  'فواتير':   {color:'#3FA796', icon:'💡'},
+  'تسوق':     {color:'#E2604F', icon:'🛍️'},
+  'ترفيه':    {color:'#8D93BC', icon:'🎬'},
+  'التزامات': {color:'#6BC7B8', icon:'📑'},
+  'أخرى':     {color:'#5B6190', icon:'📦'},
+};
+
+let state = {
+  session: null,          // Supabase auth session (JWT) — null until signed in
+  demoMode: false,        // true only for the local-only "تجربة توضيحية" preview, never persisted
+  user: null,             // {id,name,email,currency} — from `profiles` table, no password ever stored client-side
+  onboarded: false,
+  income: [],             // {id,name,amount,recurrence,months,day,createdMonthIdx,revisions:[{effectiveMonthIdx,...}]}
+  expenses: [],           // {id,name,amount,category,type,duration,startMonthIdx,revisions:[{effectiveMonthIdx,...}]}
+  goals: [],              // {id,name,target,current,months,startMonthIdx,deposits:[{amount,monthIdx}]}
+};
+
+const now = new Date();
+const CUR_MONTH_IDX = now.getFullYear()*12 + now.getMonth();
+const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function monthIdxToLabel(idx){
+  const y = Math.floor(idx/12), m = idx%12;
+  return MONTH_NAMES[m] + ' ' + y;
+}
+function fmt(n){
+  n = Math.round(n);
+  return n.toLocaleString('en-US');
+}
+function currency(){ return (state.user && state.user.currency) || 'ر.س'; }
+
+/* =========================================================================
+   REVISION RESOLUTION
+   Fixes "تعديل المصاريف بدون كتابة فوق التاريخ المالي": editing an income
+   or expense item no longer mutates its amount/name/category in place.
+   Instead it appends a {effectiveMonthIdx, ...changedFields} revision.
+   Any month calculation looks up the value that was EFFECTIVE during that
+   specific month, so past months keep showing what was actually true then,
+   while the current/future months reflect the edit.
+========================================================================= */
+function valuesAtMonth(item, monthIdx, fields){
+  const out = {};
+  fields.forEach(f => out[f] = item[f]);
+  (item.revisions || [])
+    .filter(r => r.effectiveMonthIdx <= monthIdx)
+    .sort((a,b) => a.effectiveMonthIdx - b.effectiveMonthIdx)
+    .forEach(r => fields.forEach(f => { if(r[f] !== undefined) out[f] = r[f]; }));
+  return out;
+}
+const INCOME_REVISION_FIELDS = ['name','amount'];
+const EXPENSE_REVISION_FIELDS = ['name','amount','category'];
+// What the item looks like RIGHT NOW (for lists/edit-forms) — as opposed to
+// valuesAtMonth(item, someMonthIdx, ...) which is what it looked like THEN.
+function currentView(item, fields){ return {...item, ...valuesAtMonth(item, CUR_MONTH_IDX, fields)}; }
+
+/* Called by the edit forms: instead of Object.assign-ing over the item,
+   decide whether a real "past" exists yet. If we're still in the item's
+   very first active month, there's no history to protect, so we can just
+   write the base fields directly. Otherwise we record a dated revision. */
+function applyEditWithHistory(item, changes, fields, startMonthIdx){
+  const hasHistory = CUR_MONTH_IDX > startMonthIdx;
+  if(!hasHistory){
+    Object.assign(item, changes);
+    return;
+  }
+  const changedFields = {};
+  let changed = false;
+  fields.forEach(f => {
+    if(changes[f] !== undefined && changes[f] !== item[f]){ changedFields[f] = changes[f]; changed = true; }
+  });
+  // non-history fields (recurrence/months/day for income; type/duration/startMonthIdx for expenses)
+  // are structural, not "amounts spent in the past" — safe to update directly.
+  Object.keys(changes).forEach(f => { if(!fields.includes(f)) item[f] = changes[f]; });
+  if(changed){
+    item.revisions = item.revisions || [];
+    item.revisions.push({ effectiveMonthIdx: CUR_MONTH_IDX, ...changedFields });
+  }
+}
+
+/* =========================================================================
+   CALCULATION ENGINE
+========================================================================= */
+const engine = {
+  monthlyIncome(monthIdx){
+    return state.income.reduce((sum, inc0) => {
+      const inc = valuesAtMonth(inc0, monthIdx, INCOME_REVISION_FIELDS);
+      if(inc0.recurrence === 'monthly') return sum + inc.amount;
+      if(inc0.recurrence === 'limited'){
+        const end = inc0.createdMonthIdx + (inc0.months||1) - 1;
+        if(monthIdx >= inc0.createdMonthIdx && monthIdx <= end) return sum + inc.amount;
+        return sum;
+      }
+      // irregular: only counts in its creation month for projection purposes
+      if(inc0.recurrence === 'irregular' && monthIdx === inc0.createdMonthIdx) return sum + inc.amount;
+      return sum;
+    }, 0);
+  },
+  monthlyExpenses(monthIdx, list){
+    list = list || state.expenses;
+    return list.reduce((sum, ex0) => {
+      const end = ex0.startMonthIdx + (ex0.duration||1) - 1;
+      if(monthIdx >= ex0.startMonthIdx && monthIdx <= end){
+        const ex = valuesAtMonth(ex0, monthIdx, EXPENSE_REVISION_FIELDS);
+        return sum + ex.amount;
+      }
+      return sum;
+    }, 0);
+  },
+  expensesByCategory(monthIdx){
+    const map = {};
+    state.expenses.forEach(ex0 => {
+      const end = ex0.startMonthIdx + (ex0.duration||1) - 1;
+      if(monthIdx >= ex0.startMonthIdx && monthIdx <= end){
+        const ex = valuesAtMonth(ex0, monthIdx, EXPENSE_REVISION_FIELDS);
+        map[ex.category] = (map[ex.category]||0) + ex.amount;
+      }
+    });
+    return map;
+  },
+  surplus(monthIdx){
+    return this.monthlyIncome(monthIdx) - this.monthlyExpenses(monthIdx);
+  },
+  goalRequiredMonthly(goal){
+    const remaining = Math.max(goal.target - goal.current, 0);
+    const monthsLeft = Math.max(goal.months, 1);
+    return remaining / monthsLeft;
+  },
+  goalStatus(goal){
+    const req = this.goalRequiredMonthly(goal);
+    const surplus = this.surplus(CUR_MONTH_IDX);
+    if(surplus >= req) return {ok:true, deficit:0, req};
+    return {ok:false, deficit:req - surplus, req};
+  },
+  projection(months){
+    // cumulative savings projection starting from goals' current totals baseline 0
+    const out = [];
+    let cumulative = 0;
+    for(let i=0;i<months;i++){
+      const idx = CUR_MONTH_IDX + i;
+      const s = this.surplus(idx);
+      cumulative += s;
+      out.push({idx, label: MONTH_NAMES[idx%12].slice(0,3), surplus:s, cumulative});
+    }
+    return out;
+  }
+};
+
+/* =========================================================================
+   ROUTER
+========================================================================= */
+/* =========================================================================
+   ROUTER — real hash-based routing.
+   The URL (#/dashboard, #/income, ...) is the single source of truth for
+   which screen is shown. go() just changes location.hash; a 'hashchange'
+   listener (registered at the bottom, in INIT) does the actual rendering.
+   This gives working back/forward buttons and shareable/deep-linkable URLs,
+   instead of the old version which only mutated in-memory state.
+========================================================================= */
+const VALID_ROUTES = ['landing','signup','login','onboarding','dashboard','income','expenses','goals','reports','profile'];
+const APP_PAGES = ['dashboard','income','expenses','goals','reports','profile'];
+
+const router = {
+  current: 'landing',
+  go(name){
+    if(!VALID_ROUTES.includes(name)) name = 'landing';
+    const target = '#/' + name;
+    if(location.hash === target){
+      this.render(name); // same hash won't fire hashchange — render directly
+    } else {
+      location.hash = target;
+    }
+  },
+  parseHash(){
+    const raw = (location.hash || '').replace(/^#\/?/, '').split('?')[0];
+    return VALID_ROUTES.includes(raw) ? raw : 'landing';
+  },
+  render(name){
+    // auth/onboarding guards — redirect (via hash, so URL stays consistent)
+    if(APP_PAGES.includes(name) && !(state.user && state.onboarded)){
+      const fallback = state.user ? 'onboarding' : 'login';
+      if(fallback !== name){ location.replace('#/' + fallback); return; }
+      name = fallback;
+    }
+    if(name === 'onboarding' && !state.user){ location.replace('#/signup'); return; }
+
+    ['landing','signup','login','onboarding'].forEach(v=>{
+      document.getElementById('view-'+v).classList.toggle('hidden', v!==name);
+    });
+    const appView = document.getElementById('view-app');
+    if(APP_PAGES.includes(name)){
+      appView.classList.add('show');
+      document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+      document.getElementById('page-'+name).classList.remove('hidden');
+      document.querySelectorAll('.side-link').forEach(l=>l.classList.toggle('active', l.dataset.route===name));
+      app.renderPage(name);
+    } else {
+      appView.classList.remove('show');
+    }
+    this.current = name;
+    window.scrollTo({top:0, behavior:'instant'});
+  }
+};
+window.addEventListener('hashchange', () => router.render(router.parseHash()));
+
+/* =========================================================================
+   TOAST
+========================================================================= */
+function toast(msg, warn){
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (warn ? ' warn' : '');
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+
+/* =========================================================================
+   SVG GOAL PATH (signature element)
+========================================================================= */
+function renderGoalPath(container, pct, months){
+  pct = Math.max(0, Math.min(100, pct));
+  const w = 520, h = 90;
+  const segCount = Math.max(Math.min(months,18),4);
+  let path = `M20,${h-20}`;
+  const pts = [];
+  for(let i=0;i<=segCount;i++){
+    const x = 20 + (w-40) * (i/segCount);
+    const y = h-20 - Math.sin(i*0.9)*14;
+    pts.push([x,y]);
+  }
+  path = 'M ' + pts.map(p=>p.join(',')).join(' L ');
+  const coinPos = (w-40) * (pct/100) + 20;
+  // approximate y on the sine path near coin position
+  const coinT = (pct/100) * segCount;
+  const coinY = h-20 - Math.sin(coinT*0.9)*14;
+  let dashesSvg = '';
+  pts.forEach((p,i)=>{
+    if(i%2===0) dashesSvg += `<circle cx="${p[0]}" cy="${p[1]}" r="2" fill="var(--ink-faint)" opacity="0.5"/>`;
+  });
+  container.innerHTML = `
+  <svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+    <path d="${path}" fill="none" stroke="var(--navy-600)" stroke-width="3" stroke-linecap="round"/>
+    <path d="${path}" fill="none" stroke="url(#gpGrad)" stroke-width="3" stroke-linecap="round"
+      stroke-dasharray="1000" stroke-dashoffset="${1000 - (pct/100)*1000}"/>
+    <defs>
+      <linearGradient id="gpGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#3FA796"/>
+        <stop offset="100%" stop-color="#D9A441"/>
+      </linearGradient>
+    </defs>
+    ${dashesSvg}
+    <circle cx="${w-20}" cy="${h-20-Math.sin(segCount*0.9)*14}" r="7" fill="var(--navy-800)" stroke="var(--gold-500)" stroke-width="2"/>
+    <circle cx="${coinPos}" cy="${coinY}" r="9" fill="#D9A441" stroke="#0F1429" stroke-width="2"/>
+    <text x="${coinPos}" y="${coinY-16}" text-anchor="middle" fill="#E8C077" font-size="12" font-family="IBM Plex Mono" font-weight="600">${Math.round(pct)}%</text>
+  </svg>`;
+}
+
+/* =========================================================================
+   APP LOGIC
+========================================================================= */
+const app = {
+  charts: {},
+  activeExpenseFilter: 'all',
+
+  /* ---------- AUTH ----------
+     Real auth now lives in Supabase: passwords are hashed server-side
+     (Supabase uses bcrypt) and never touch this client as anything but
+     a one-time submission over HTTPS; a JWT session is what's kept
+     locally (in sb's own storage), not a password. See db.js. */
+  async demoLogin(){
+    // Local-only preview: NOT a real backend session, nothing is persisted.
+    // Useful for trying the UI on GitHub Pages without creating a Supabase
+    // account. Clearly marked in the sidebar so nobody mistakes it for a
+    // saved account.
+    state.demoMode = true;
+    state.user = {id:null, name:'سارة العتيبي (تجريبي)', email:'demo@example.com', currency:'ر.س'};
+    state.onboarded = true;
+    state.income = [
+      {id:'d1', name:'راتب أساسي', amount:12500, recurrence:'monthly', months:null, day:27, createdMonthIdx: CUR_MONTH_IDX-3, revisions:[]},
+      {id:'d2', name:'مشروع تصميم حر', amount:1800, recurrence:'limited', months:4, day:5, createdMonthIdx: CUR_MONTH_IDX-1, revisions:[]},
+    ];
+    state.expenses = [
+      {id:'d3', name:'إيجار الشقة', amount:3800, category:'سكن', type:'fixed', duration:12, startMonthIdx: CUR_MONTH_IDX-2, revisions:[]},
+      {id:'d4', name:'فاتورة كهرباء وماء', amount:420, category:'فواتير', type:'variable', duration:12, startMonthIdx: CUR_MONTH_IDX-2, revisions:[]},
+      {id:'d5', name:'اشتراك انترنت وجوال', amount:280, category:'فواتير', type:'fixed', duration:12, startMonthIdx: CUR_MONTH_IDX-2, revisions:[]},
+      {id:'d6', name:'قسط سيارة', amount:1450, category:'التزامات', type:'fixed', duration:24, startMonthIdx: CUR_MONTH_IDX-6, revisions:[]},
+      {id:'d7', name:'تسوق ومستلزمات', amount:900, category:'تسوق', type:'variable', duration:12, startMonthIdx: CUR_MONTH_IDX-1, revisions:[]},
+      {id:'d8', name:'مطاعم وترفيه', amount:650, category:'ترفيه', type:'variable', duration:12, startMonthIdx: CUR_MONTH_IDX-1, revisions:[]},
+      {id:'d9', name:'اشتراكات متنوعة', amount:150, category:'أخرى', type:'fixed', duration:12, startMonthIdx: CUR_MONTH_IDX-1, revisions:[]},
+    ];
+    state.goals = [
+      {id:'g1', name:'دفعة أولى — شقة', target:60000, current:37200, months:14, startMonthIdx: CUR_MONTH_IDX-8, deposits:[]},
+      {id:'g2', name:'صندوق الطوارئ', target:20000, current:9500, months:10, startMonthIdx: CUR_MONTH_IDX-4, deposits:[]},
+      {id:'g3', name:'رحلة سفر عائلية', target:15000, current:2100, months:6, startMonthIdx: CUR_MONTH_IDX-1, deposits:[]},
+    ];
+    toast('وضع تجريبي محلي — بياناتك هنا لن تُحفظ ✨');
+    router.go('dashboard');
+    this.refreshSidebar();
+  },
+
+  async logout(){
+    if(sb && state.session) { try { await sb.auth.signOut(); } catch(err){ console.error(err); } }
+    state.session = null; state.demoMode = false;
+    state.user = null; state.onboarded = false;
+    state.income = []; state.expenses = []; state.goals = [];
+    router.go('landing');
+  },
+
+  /* ---------- SIDEBAR ---------- */
+  refreshSidebar(){
+    if(!state.user) return;
+    document.getElementById('sideName').textContent = state.user.name;
+    document.getElementById('sideEmail').textContent = state.user.email;
+    document.getElementById('sideAvatar').textContent = state.user.name.trim().charAt(0);
+  },
+
+  /* ---------- PAGE RENDER DISPATCH ---------- */
+  renderPage(name){
+    this.refreshSidebar();
+    if(name==='dashboard') this.renderDashboard();
+    if(name==='income') this.renderIncome();
+    if(name==='expenses') this.renderExpenses();
+    if(name==='goals') this.renderGoals();
+    if(name==='reports') this.renderReports();
+    if(name==='profile') this.renderProfile();
+  },
+
+  destroyChart(key){ if(this.charts[key]){ this.charts[key].destroy(); delete this.charts[key]; } },
+
+  chartDefaults(){
+    if(typeof Chart === 'undefined') return;
+    Chart.defaults.font.family = "'IBM Plex Sans Arabic','IBM Plex Mono',sans-serif";
+    Chart.defaults.color = '#8D93BC';
+    Chart.defaults.borderColor = 'rgba(244,242,234,0.08)';
+  },
+
+  /* ---------- DASHBOARD ---------- */
+  renderDashboard(){
+    this.chartDefaults();
+    document.getElementById('dashUserName').textContent = state.user.name.split(' ')[0];
+    document.getElementById('curMonthLabel').textContent = monthIdxToLabel(CUR_MONTH_IDX);
+
+    const inc = engine.monthlyIncome(CUR_MONTH_IDX);
+    const exp = engine.monthlyExpenses(CUR_MONTH_IDX);
+    const sur = inc - exp;
+    document.getElementById('kpiIncome').textContent = fmt(inc) + ' ' + currency();
+    document.getElementById('kpiExpense').textContent = fmt(exp) + ' ' + currency();
+    document.getElementById('kpiSurplus').textContent = fmt(sur) + ' ' + currency();
+    document.getElementById('kpiIncomeNote').textContent = state.income.length + ' مصدر دخل نشط';
+    document.getElementById('kpiExpenseNote').textContent = state.expenses.length + ' مصروف مسجّل';
+    const surCard = document.getElementById('kpiSurplusCard');
+    surCard.classList.toggle('deficit', sur < 0);
+    document.getElementById('kpiSurplusNote').textContent = sur >= 0 ? 'وضع صحي — قابل للإدخار' : 'تنبيه: مصاريفك تتجاوز دخلك';
+
+    // Expense pie
+    const byCat = engine.expensesByCategory(CUR_MONTH_IDX);
+    const cats = Object.keys(byCat);
+    this.destroyChart('pie');
+    const ctxPie = document.getElementById('chartExpensePie').getContext('2d');
+    this.charts.pie = safeChart(ctxPie, {
+      type:'doughnut',
+      data:{ labels:cats, datasets:[{data:cats.map(c=>byCat[c]), backgroundColor:cats.map(c=>CATEGORY_META[c].color), borderColor:'#151B38', borderWidth:3}]},
+      options:{ cutout:'68%', plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false }
+    });
+    const legend = document.getElementById('expenseLegend');
+    const total = cats.reduce((s,c)=>s+byCat[c],0) || 1;
+    legend.innerHTML = cats.length ? cats.map(c=>`
+      <div class="legend-item"><span class="dot" style="background:${CATEGORY_META[c].color}"></span>
+      <span class="li-name">${c}</span><span class="li-val num">${Math.round(byCat[c]/total*100)}%</span></div>`).join('') :
+      '<div class="empty-state" style="padding:20px 0;"><p>لا توجد مصاريف مسجلة بعد</p></div>';
+
+    // Bar next 6 months
+    const barMonths = [];
+    for(let i=0;i<6;i++){ const idx=CUR_MONTH_IDX+i; barMonths.push({label:MONTH_NAMES[idx%12].slice(0,3), val:engine.monthlyExpenses(idx)}); }
+    this.destroyChart('bar');
+    this.charts.bar = safeChart(document.getElementById('chartExpenseBar').getContext('2d'), {
+      type:'bar',
+      data:{labels:barMonths.map(m=>m.label), datasets:[{data:barMonths.map(m=>m.val), backgroundColor:'#E2604F', borderRadius:6, maxBarThickness:34}]},
+      options:{plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false, scales:{y:{grid:{color:'rgba(244,242,234,0.06)'}}, x:{grid:{display:false}}}}
+    });
+
+    // Projection line
+    const proj = engine.projection(8);
+    this.destroyChart('proj');
+    this.charts.proj = safeChart(document.getElementById('chartProjection').getContext('2d'), {
+      type:'line',
+      data:{labels:proj.map(p=>p.label), datasets:[{label:'إجمالي المدخرات المتوقع', data:proj.map(p=>p.cumulative), borderColor:'#D9A441', backgroundColor:'rgba(217,164,65,0.12)', fill:true, tension:.4, pointRadius:3, pointBackgroundColor:'#D9A441'}]},
+      options:{plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false, scales:{y:{grid:{color:'rgba(244,242,234,0.06)'}}, x:{grid:{display:false}}}}
+    });
+
+    // Goals preview
+    const wrap = document.getElementById('dashGoalsPreview');
+    if(!state.goals.length){
+      wrap.innerHTML = `<div class="empty-state"><div class="es-icon">🎯</div><h4>لا توجد أهداف بعد</h4><p>أنشئ أول هدف مالي لك وابدأ رحلتك</p><button class="btn btn-gold btn-sm" data-action="openGoalModal">+ هدف جديد</button></div>`;
+    } else {
+      wrap.innerHTML = '';
+      state.goals.slice(0,2).forEach(g=>{
+        const pct = Math.min(100, (g.current/g.target)*100);
+        const st = engine.goalStatus(g);
+        const row = document.createElement('div');
+        row.style.marginBottom = '14px';
+        row.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px;">
+          <strong>${g.name}</strong><span class="num" style="color:var(--ink-muted)">${fmt(g.current)} / ${fmt(g.target)} ${currency()}</span></div>
+          <div class="progress-track"><div class="progress-fill ${st.ok?'':'deficit'}" style="width:${pct}%;"></div></div>`;
+        wrap.appendChild(row);
+      });
+    }
+  },
+
+  /* ---------- INCOME ---------- */
+  openIncomeModal(item){
+    document.getElementById('incomeForm').reset();
+    document.getElementById('income-months-field').classList.add('hidden');
+    if(item){
+      document.getElementById('incomeModalTitle').textContent = 'تعديل مصدر دخل';
+      document.getElementById('income-id').value = item.id;
+      document.getElementById('income-name').value = item.name;
+      document.getElementById('income-amount').value = item.amount;
+      document.getElementById('income-recurrence').value = item.recurrence;
+      document.getElementById('income-months').value = item.months||'';
+      document.getElementById('income-day').value = item.day||'';
+      if(item.recurrence==='limited') document.getElementById('income-months-field').classList.remove('hidden');
+    } else {
+      document.getElementById('incomeModalTitle').textContent = 'إضافة مصدر دخل';
+      document.getElementById('income-id').value = '';
+    }
+    document.getElementById('modalIncome').classList.remove('hidden');
+  },
+  closeModal(id){ document.getElementById(id).classList.add('hidden'); },
+  editIncome(id){
+    const item = state.income.find(i=>String(i.id)===String(id));
+    if(item) this.openIncomeModal(currentView(item, INCOME_REVISION_FIELDS));
+  },
+  renderIncome(){
+    document.getElementById('incomeTotalDisplay').textContent = fmt(engine.monthlyIncome(CUR_MONTH_IDX)) + ' ' + currency();
+    const list = document.getElementById('incomeList');
+    if(!state.income.length){
+      list.innerHTML = `<div class="empty-state"><div class="es-icon">💰</div><h4>لا توجد مصادر دخل</h4><p>أضف مصدر دخلك الأول لتبدأ حساب فائضك الشهري</p><button class="btn btn-gold btn-sm" data-action="openIncomeModal">+ إضافة مصدر دخل</button></div>`;
+      return;
+    }
+    const recLabel = {monthly:'شهري ثابت', limited:'محدد المدة', irregular:'غير منتظم'};
+    list.innerHTML = state.income.map(inc0 => { const inc = currentView(inc0, INCOME_REVISION_FIELDS); return `
+      <div class="item-row income">
+        <div class="ir-icon">💵</div>
+        <div class="ir-main">
+          <div class="ir-title">${esc(inc.name)}</div>
+          <div class="ir-meta"><span class="ir-tag">${esc(recLabel[inc.recurrence])}</span>${inc.recurrence==='limited'?`<span class="ir-tag">${esc(inc.months)} شهر</span>`:''}${inc.day?`<span class="ir-tag">يوم ${esc(inc.day)} من كل شهر</span>`:''}</div>
+        </div>
+        <div class="ir-amount">${fmt(inc.amount)} ${esc(currency())}</div>
+        <div class="ir-actions">
+          <button class="icon-btn" data-action="editIncome" data-id="${inc.id}" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+          <button class="icon-btn danger" data-action="deleteIncome" data-id="${inc.id}" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg></button>
+        </div>
+      </div>`; }).join('');
+  },
+  async deleteIncome(id){
+    if(!state.demoMode && sb){
+      try { await db.remove('income', id); } catch(err){ dbErrorToast(err); return; }
+    }
+    state.income = state.income.filter(i=>String(i.id)!==String(id));
+    toast('تم حذف مصدر الدخل');
+    this.renderIncome(); this.renderDashboard();
+  },
+
+  /* ---------- EXPENSES ---------- */
+  selectChip(el, hiddenId){
+    el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(hiddenId).value = el.dataset.val;
+  },
+  openExpenseModal(item){
+    document.getElementById('expenseForm').reset();
+    const monthInput = document.getElementById('expense-start');
+    const y = Math.floor(CUR_MONTH_IDX/12), m = (CUR_MONTH_IDX%12)+1;
+    monthInput.value = `${y}-${String(m).padStart(2,'0')}`;
+    document.querySelectorAll('#expenseForm .chip').forEach(c=>c.classList.remove('active'));
+    document.querySelector('#expenseForm .chip[data-val="fixed"]').classList.add('active');
+    document.getElementById('expense-type').value = 'fixed';
+    if(item){
+      document.getElementById('expenseModalTitle').textContent = 'تعديل مصروف';
+      document.getElementById('expense-id').value = item.id;
+      document.getElementById('expense-name').value = item.name;
+      document.getElementById('expense-amount').value = item.amount;
+      document.getElementById('expense-category').value = item.category;
+      document.getElementById('expense-duration').value = item.duration;
+      document.getElementById('expense-type').value = item.type;
+      document.querySelectorAll('#expenseForm .chip').forEach(c=>c.classList.toggle('active', c.dataset.val===item.type));
+      const sy = Math.floor(item.startMonthIdx/12), sm=(item.startMonthIdx%12)+1;
+      monthInput.value = `${sy}-${String(sm).padStart(2,'0')}`;
+    } else {
+      document.getElementById('expenseModalTitle').textContent = 'إضافة مصروف';
+      document.getElementById('expense-id').value = '';
+    }
+    document.getElementById('modalExpense').classList.remove('hidden');
+  },
+  editExpense(id){
+    const item = state.expenses.find(e=>String(e.id)===String(id));
+    if(item) this.openExpenseModal(currentView(item, EXPENSE_REVISION_FIELDS));
+  },
+  filterExpenses(el){
+    document.querySelectorAll('#expenseFilterChips .chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+    this.activeExpenseFilter = el.dataset.cat;
+    this.renderExpenses(true);
+  },
+  renderExpenses(skipChips){
+    if(!skipChips){
+      const chipWrap = document.getElementById('expenseFilterChips');
+      chipWrap.innerHTML = '<div class="chip active" data-cat="all" data-action="filterExpenses">الكل</div>' +
+        Object.keys(CATEGORY_META).map(c=>`<div class="chip" data-cat="${esc(c)}" data-action="filterExpenses">${esc(CATEGORY_META[c].icon)} ${esc(c)}</div>`).join('');
+    }
+    const filtered = this.activeExpenseFilter==='all' ? state.expenses : state.expenses.filter(e=>currentView(e, EXPENSE_REVISION_FIELDS).category===this.activeExpenseFilter);
+    document.getElementById('expenseTotalDisplay').textContent = fmt(engine.monthlyExpenses(CUR_MONTH_IDX, filtered)) + ' ' + currency();
+    const list = document.getElementById('expenseList');
+    if(!filtered.length){
+      list.innerHTML = `<div class="empty-state"><div class="es-icon">🧾</div><h4>لا توجد مصاريف في هذا التصنيف</h4><p>أضف مصروفاً جديداً أو غيّر الفلتر</p></div>`;
+      return;
+    }
+    const typeLabel = {fixed:'ثابت', variable:'متغير'};
+    list.innerHTML = filtered.map(ex0 => {
+      const ex = currentView(ex0, EXPENSE_REVISION_FIELDS);
+      const endIdx = ex.startMonthIdx + ex.duration - 1;
+      const active = CUR_MONTH_IDX >= ex.startMonthIdx && CUR_MONTH_IDX <= endIdx;
+      return `
+      <div class="item-row expense">
+        <div class="ir-icon">${esc(CATEGORY_META[ex.category].icon)}</div>
+        <div class="ir-main">
+          <div class="ir-title">${esc(ex.name)}</div>
+          <div class="ir-meta">
+            <span class="ir-tag">${esc(ex.category)}</span>
+            <span class="ir-tag">${esc(typeLabel[ex.type])}</span>
+            <span class="ir-tag">${esc(ex.duration)} شهر</span>
+            <span class="ir-tag">${active ? 'نشط الآن' : (CUR_MONTH_IDX < ex.startMonthIdx ? 'يبدأ لاحقاً' : 'منتهٍ')}</span>
+            ${ex.revisions && ex.revisions.length ? '<span class="ir-tag" title="تم تعديل هذا المصروف سابقاً">✎ معدّل</span>' : ''}
+          </div>
+        </div>
+        <div class="ir-amount">${fmt(ex.amount)} ${esc(currency())}</div>
+        <div class="ir-actions">
+          <button class="icon-btn" data-action="editExpense" data-id="${ex.id}" title="تعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+          <button class="icon-btn danger" data-action="deleteExpense" data-id="${ex.id}" title="حذف/إيقاف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg></button>
+        </div>
+      </div>`;
+    }).join('');
+  },
+  async deleteExpense(id){
+    if(!state.demoMode && sb){
+      try { await db.remove('expenses', id); } catch(err){ dbErrorToast(err); return; }
+    }
+    state.expenses = state.expenses.filter(e=>String(e.id)!==String(id));
+    toast('تم حذف/إيقاف المصروف');
+    this.renderExpenses(); this.renderDashboard();
+  },
+
+  /* ---------- GOALS ---------- */
+  openGoalModal(item){
+    document.getElementById('goalForm').reset();
+    if(item){
+      document.getElementById('goalModalTitle').textContent = 'تعديل الهدف';
+      document.getElementById('goal-id').value = item.id;
+      document.getElementById('goal-name').value = item.name;
+      document.getElementById('goal-target').value = item.target;
+      document.getElementById('goal-current').value = item.current;
+      document.getElementById('goal-months').value = item.months;
+    } else {
+      document.getElementById('goalModalTitle').textContent = 'هدف مالي جديد';
+      document.getElementById('goal-id').value = '';
+      document.getElementById('goal-current').value = 0;
+    }
+    document.getElementById('modalGoal').classList.remove('hidden');
+  },
+  editGoal(id){
+    const item = state.goals.find(g=>String(g.id)===String(id));
+    if(item) this.openGoalModal(item);
+  },
+  openDepositModal(goalId){
+    document.getElementById('depositForm').reset();
+    document.getElementById('deposit-goal-id').value = goalId;
+    document.getElementById('modalDeposit').classList.remove('hidden');
+  },
+  renderGoals(){
+    const wrap = document.getElementById('goalsList');
+    if(!state.goals.length){
+      wrap.innerHTML = `<div class="empty-state"><div class="es-icon">🎯</div><h4>لا توجد أهداف مالية بعد</h4><p>حدد أول هدف ادخاري لك ودع مسار يحسب لك الخطة</p><button class="btn btn-gold btn-sm" data-action="openGoalModal">+ هدف جديد</button></div>`;
+      return;
+    }
+    wrap.innerHTML = '';
+    state.goals.forEach(g=>{
+      const pct = Math.min(100, (g.current/g.target)*100);
+      const st = engine.goalStatus(g);
+      const card = document.createElement('div');
+      card.className = 'goal-card';
+      card.innerHTML = `
+        <div class="gc-top">
+          <div><h3>${esc(g.name)}</h3><div class="gc-tag">بدأ في ${esc(monthIdxToLabel(g.startMonthIdx))} · مدة ${esc(g.months)} شهر</div></div>
+          <div class="status-badge ${st.ok?'ok':'warn'}">${st.ok?'✓ قابل للتحقيق':'⚠ عجز مالي'}</div>
+        </div>
+        <div class="path-wrap" data-goal="${g.id}"></div>
+        <div class="goal-nums">
+          <div class="gn"><div class="gn-label">المدخر حالياً</div><div class="gn-val num">${fmt(g.current)} ${esc(currency())}</div></div>
+          <div class="gn"><div class="gn-label">المستهدف</div><div class="gn-val num">${fmt(g.target)} ${esc(currency())}</div></div>
+          <div class="gn"><div class="gn-label">مطلوب شهرياً</div><div class="gn-val num">${fmt(st.req)} ${esc(currency())}</div></div>
+        </div>
+        ${!st.ok ? `<div class="goal-suggestion">لتصل لهدفك، يحتاج تزيد المدة لنحو <strong>${Math.ceil((g.target-g.current)/Math.max(engine.surplus(CUR_MONTH_IDX),1))}</strong> شهر إضافي، أو تقلل مصاريفك بمقدار <strong class="num">${fmt(st.deficit)} ${esc(currency())}</strong> شهرياً.</div>` : ''}
+        <div class="goal-actions">
+          <button class="btn btn-teal btn-sm" data-action="openDepositModal" data-id="${g.id}">+ إضافة إدخار</button>
+          <button class="btn btn-ghost btn-sm" data-action="editGoal" data-id="${g.id}">تعديل</button>
+          <button class="btn btn-danger btn-sm" data-action="deleteGoal" data-id="${g.id}">حذف</button>
+        </div>
+      `;
+      wrap.appendChild(card);
+      renderGoalPath(card.querySelector('.path-wrap'), pct, g.months);
+    });
+  },
+  async deleteGoal(id){
+    if(!state.demoMode && sb){
+      try { await db.remove('goals', id); } catch(err){ dbErrorToast(err); return; }
+    }
+    state.goals = state.goals.filter(g=>String(g.id)!==String(id));
+    toast('تم حذف الهدف');
+    this.renderGoals(); this.renderDashboard();
+  },
+
+  /* ---------- REPORTS ---------- */
+  renderReports(){
+    this.chartDefaults();
+    const byCat = engine.expensesByCategory(CUR_MONTH_IDX);
+    const cats = Object.keys(byCat);
+    this.destroyChart('rpie');
+    this.charts.rpie = safeChart(document.getElementById('reportPie').getContext('2d'), {
+      type:'pie',
+      data:{labels:cats, datasets:[{data:cats.map(c=>byCat[c]), backgroundColor:cats.map(c=>CATEGORY_META[c].color), borderColor:'#151B38', borderWidth:3}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{padding:14}}}}
+    });
+
+    const fixedTotal = state.expenses.filter(e=>e.type==='fixed').reduce((s,e)=>{
+      const end=e.startMonthIdx+e.duration-1; return CUR_MONTH_IDX>=e.startMonthIdx&&CUR_MONTH_IDX<=end?s+e.amount:s;
+    },0);
+    const varTotal = state.expenses.filter(e=>e.type==='variable').reduce((s,e)=>{
+      const end=e.startMonthIdx+e.duration-1; return CUR_MONTH_IDX>=e.startMonthIdx&&CUR_MONTH_IDX<=end?s+e.amount:s;
+    },0);
+    this.destroyChart('rfv');
+    this.charts.rfv = safeChart(document.getElementById('reportFixedVar').getContext('2d'), {
+      type:'doughnut',
+      data:{labels:['ثابت','متغير'], datasets:[{data:[fixedTotal,varTotal], backgroundColor:['#D9A441','#3FA796'], borderColor:'#151B38', borderWidth:3}]},
+      options:{cutout:'60%', responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+    });
+
+    const months = [];
+    for(let i=0;i<6;i++){
+      const idx = CUR_MONTH_IDX+i;
+      months.push({label:MONTH_NAMES[idx%12].slice(0,3), inc:engine.monthlyIncome(idx), exp:engine.monthlyExpenses(idx)});
+    }
+    this.destroyChart('rcombo');
+    this.charts.rcombo = safeChart(document.getElementById('reportCombo').getContext('2d'), {
+      data:{
+        labels:months.map(m=>m.label),
+        datasets:[
+          {type:'bar', label:'الدخل', data:months.map(m=>m.inc), backgroundColor:'#3FA796', borderRadius:6, maxBarThickness:28},
+          {type:'bar', label:'المصاريف', data:months.map(m=>m.exp), backgroundColor:'#E2604F', borderRadius:6, maxBarThickness:28},
+          {type:'line', label:'الفائض', data:months.map(m=>m.inc-m.exp), borderColor:'#D9A441', tension:.4, pointBackgroundColor:'#D9A441'}
+        ]
+      },
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{grid:{color:'rgba(244,242,234,0.06)'}}, x:{grid:{display:false}}}}
+    });
+
+    this.destroyChart('rgoals');
+    this.charts.rgoals = safeChart(document.getElementById('reportGoals').getContext('2d'), {
+      type:'bar',
+      data:{labels:state.goals.map(g=>g.name), datasets:[{data:state.goals.map(g=>Math.min(100,(g.current/g.target)*100)), backgroundColor:'#D9A441', borderRadius:8, maxBarThickness:36}]},
+      options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,max:100,grid:{color:'rgba(244,242,234,0.06)'}}, y:{grid:{display:false}}}}
+    });
+  },
+
+  /* ---------- PROFILE ---------- */
+  renderProfile(){
+    document.getElementById('prof-name').value = state.user.name;
+    document.getElementById('prof-email').value = state.user.email;
+    document.getElementById('prof-currency').value = state.user.currency;
+    document.getElementById('profCountIncome').textContent = state.income.length;
+    document.getElementById('profCountExpense').textContent = state.expenses.length;
+    document.getElementById('profCountGoals').textContent = state.goals.length;
+  },
+  async saveProfile(){
+    const name = document.getElementById('prof-name').value.trim() || state.user.name;
+    const currencyVal = document.getElementById('prof-currency').value;
+    const prev = {name:state.user.name, currency:state.user.currency};
+    state.user.name = name;
+    state.user.currency = currencyVal;
+    try{
+      if(!state.demoMode && sb){
+        const {error} = await sb.from('profiles').update({name, currency:currencyVal}).eq('id', state.user.id);
+        if(error) throw error;
+      }
+      this.refreshSidebar();
+      toast('تم حفظ التغييرات بنجاح');
+    } catch(err){
+      state.user.name = prev.name; state.user.currency = prev.currency;
+      dbErrorToast(err);
+    }
+  },
+
+  /* ---------- ONBOARDING ---------- */
+  selectOnbFreq(el){
+    el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+  },
+  async completeOnboarding(){
+    const val = parseFloat(document.getElementById('onb-income').value.replace(/,/g,''));
+    const errEl = document.getElementById('onb-err');
+    if(!val || val<=0){ errEl.style.display='block'; return; }
+    errEl.style.display='none';
+    const freqChip = document.querySelector('#view-onboarding .chip.active');
+    const draft = {name:'الدخل الأساسي', amount:val, recurrence:freqChip.dataset.val==='monthly'?'monthly':'irregular', months:null, day:1, createdMonthIdx:CUR_MONTH_IDX, revisions:[]};
+    try{
+      if(!state.demoMode && sb){
+        const saved = await db.insert('income', draft);
+        state.income.push(saved);
+        const {error} = await sb.from('profiles').update({onboarded:true}).eq('id', state.user.id);
+        if(error) throw error;
+      } else {
+        state.income.push({...draft, id:'local-'+Date.now()});
+      }
+      state.onboarded = true;
+      toast('تم إعداد حسابك بنجاح 🎉');
+      router.go('dashboard');
+    } catch(err){ dbErrorToast(err); }
+  }
+};
+
+/* =========================================================================
+   FORM HANDLERS
+========================================================================= */
+document.getElementById('signupForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const name = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass = document.getElementById('su-pass').value;
+  const currencyVal = document.getElementById('su-currency').value;
+  let valid = true;
+  document.getElementById('f-name').classList.toggle('has-error', !name); if(!name) valid=false;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  document.getElementById('f-email').classList.toggle('has-error', !emailOk); if(!emailOk) valid=false;
+  const passOk = pass.length>=8 && /[a-zA-Z]/.test(pass) && /[0-9]/.test(pass);
+  document.getElementById('f-pass').classList.toggle('has-error', !passOk); if(!passOk) valid=false;
+  if(!valid) return;
+  if(!sb){ toast('لم يتم ضبط الاتصال بقاعدة البيانات بعد (راجع config.js)', true); return; }
+  const submitBtn = this.querySelector('button[type=submit]');
+  submitBtn.disabled = true;
+  try{
+    // Supabase Auth hashes and stores the password server-side (bcrypt) and
+    // returns a JWT session — no plaintext password is ever kept here.
+    // name/currency travel as user metadata; a database trigger (see
+    // schema.sql: handle_new_user) creates the `profiles` row from them
+    // server-side, so it works even before the user has a session yet
+    // (e.g. when "Confirm email" is enabled and signUp() returns no session).
+    const {data, error} = await sb.auth.signUp({
+      email, password: pass,
+      options: { data: { name, currency: currencyVal } }
+    });
+    if(error) throw error;
+    if(!data.user){ throw new Error('signup-failed'); }
+    if(!data.session){
+      // Project has "confirm email" turned on — no session yet, but the
+      // profile row already exists (created by the trigger above).
+      toast('تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول');
+      router.go('login');
+      return;
+    }
+    state.session = data.session;
+    state.user = {id:data.user.id, name, email, currency:currencyVal};
+    state.onboarded = false;
+    state.income = []; state.expenses = []; state.goals = [];
+    toast('تم إنشاء حسابك بنجاح');
+    document.getElementById('onbCur').textContent = currencyVal;
+    router.go('onboarding');
+  } catch(err){
+    console.error(err);
+    const msg = /already registered|already exists/i.test(err.message||'') ? 'هذا البريد مسجّل مسبقاً — جرّب تسجيل الدخول' : 'تعذّر إنشاء الحساب، حاول مرة أخرى';
+    toast(msg, true);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+document.getElementById('su-pass').addEventListener('input', function(){
+  const v = this.value;
+  let score = 0;
+  if(v.length>=8) score+=40;
+  if(/[a-zA-Z]/.test(v)) score+=30;
+  if(/[0-9]/.test(v)) score+=30;
+  const bar = document.getElementById('pwBar');
+  bar.style.width = score+'%';
+  bar.style.background = score<50?'#E2604F':score<100?'#D9A441':'#3FA796';
+});
+
+document.getElementById('loginForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const email = document.getElementById('li-email').value.trim();
+  const pass = document.getElementById('li-pass').value;
+  document.getElementById('lf-email').classList.remove('has-error');
+  document.getElementById('lf-pass').classList.remove('has-error');
+  if(!sb){ toast('لم يتم ضبط الاتصال بقاعدة البيانات بعد (راجع config.js)', true); return; }
+  const submitBtn = this.querySelector('button[type=submit]');
+  submitBtn.disabled = true;
+  try{
+    const {data, error} = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error){
+      // Supabase deliberately gives one generic error for both "no such
+      // user" and "wrong password" so a login form can't be used to probe
+      // which emails have accounts — we mirror that on the wrong-password field.
+      document.getElementById('lf-pass').classList.add('has-error');
+      throw error;
+    }
+    state.session = data.session;
+    state.demoMode = false;
+    await db.loadAll();
+    if(!state.user){
+      // Auth user exists but has no matching `profiles` row — most likely
+      // it was created before the handle_new_user trigger existed, or
+      // during a database outage that interrupted the trigger. We have an
+      // authenticated session now, so RLS allows us to create it here as
+      // a one-time repair instead of leaving the account stuck.
+      const meta = (data.user && data.user.user_metadata) || {};
+      const fallbackName = meta.name || email.split('@')[0];
+      const fallbackCurrency = meta.currency || 'ر.س';
+      try{
+        await sb.from('profiles').insert({ id: data.user.id, name: fallbackName, currency: fallbackCurrency, onboarded: false });
+      } catch(err){ console.error('تعذّر إصلاح ملف التعريف الناقص:', err); }
+      state.user = { id: data.user.id, name: fallbackName, email, currency: fallbackCurrency };
+      state.onboarded = false;
+    }
+    toast('أهلاً بعودتك، ' + (state.user.name||'').split(' ')[0]);
+    router.go(state.onboarded ? 'dashboard' : 'onboarding');
+  } catch(err){
+    console.error(err);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+document.getElementById('incomeForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const id = document.getElementById('income-id').value;
+  const name = document.getElementById('income-name').value.trim();
+  const amount = parseFloat(document.getElementById('income-amount').value.replace(/,/g,''));
+  const recurrence = document.getElementById('income-recurrence').value;
+  const months = parseInt(document.getElementById('income-months').value)||null;
+  const day = parseInt(document.getElementById('income-day').value)||null;
+  if(!name || !amount || amount<=0) { toast('فضلاً أكمل بيانات مصدر الدخل', true); return; }
+  try{
+    if(id){
+      const item = state.income.find(i=>String(i.id)===String(id));
+      applyEditWithHistory(item, {name, amount, recurrence, months, day}, INCOME_REVISION_FIELDS, item.createdMonthIdx);
+      if(!state.demoMode && sb) await db.update('income', item.id, item);
+      toast('تم تحديث مصدر الدخل');
+    } else {
+      const draft = {name, amount, recurrence, months, day, createdMonthIdx:CUR_MONTH_IDX, revisions:[]};
+      if(!state.demoMode && sb){
+        const saved = await db.insert('income', draft);
+        state.income.push(saved);
+      } else {
+        state.income.push({...draft, id:'local-'+Date.now()});
+      }
+      toast('تمت إضافة مصدر الدخل');
+    }
+    app.closeModal('modalIncome');
+    app.renderIncome(); app.renderDashboard();
+  } catch(err){ dbErrorToast(err); }
+});
+document.getElementById('income-recurrence').addEventListener('change', function(){
+  document.getElementById('income-months-field').classList.toggle('hidden', this.value!=='limited');
+});
+
+document.getElementById('expenseForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const id = document.getElementById('expense-id').value;
+  const name = document.getElementById('expense-name').value.trim();
+  const amount = parseFloat(document.getElementById('expense-amount').value.replace(/,/g,''));
+  const category = document.getElementById('expense-category').value;
+  const type = document.getElementById('expense-type').value;
+  const duration = parseInt(document.getElementById('expense-duration').value)||1;
+  const startVal = document.getElementById('expense-start').value;
+  if(!name || !amount || amount<=0 || !startVal) { toast('فضلاً أكمل بيانات المصروف', true); return; }
+  const [sy,sm] = startVal.split('-').map(Number);
+  const startMonthIdx = sy*12 + (sm-1);
+  try{
+    if(id){
+      const item = state.expenses.find(x=>String(x.id)===String(id));
+      // name/amount/category are protected by revision history; type/duration
+      // /startMonthIdx are structural and always apply immediately.
+      applyEditWithHistory(item, {name, amount, category, type, duration, startMonthIdx}, EXPENSE_REVISION_FIELDS, item.startMonthIdx);
+      if(!state.demoMode && sb) await db.update('expenses', item.id, item);
+      toast('تم تحديث المصروف (القيم القديمة محفوظة في السجل التاريخي)');
+    } else {
+      const draft = {name, amount, category, type, duration, startMonthIdx, revisions:[]};
+      if(!state.demoMode && sb){
+        const saved = await db.insert('expenses', draft);
+        state.expenses.push(saved);
+      } else {
+        state.expenses.push({...draft, id:'local-'+Date.now()});
+      }
+      toast('تمت إضافة المصروف');
+    }
+    app.closeModal('modalExpense');
+    app.renderExpenses(); app.renderDashboard();
+  } catch(err){ dbErrorToast(err); }
+});
+
+document.getElementById('goalForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const id = document.getElementById('goal-id').value;
+  const name = document.getElementById('goal-name').value.trim();
+  const target = parseFloat(document.getElementById('goal-target').value.replace(/,/g,''));
+  const current = parseFloat(document.getElementById('goal-current').value.replace(/,/g,''))||0;
+  const months = parseInt(document.getElementById('goal-months').value);
+  if(!name || !target || target<=0 || !months || months<=0){ toast('فضلاً أكمل بيانات الهدف', true); return; }
+  try{
+    if(id){
+      const item = state.goals.find(g=>String(g.id)===String(id));
+      Object.assign(item, {name, target, current, months});
+      if(!state.demoMode && sb) await db.update('goals', item.id, item);
+      toast('تم تحديث الهدف');
+    } else {
+      const draft = {name, target, current, months, startMonthIdx:CUR_MONTH_IDX, deposits:[]};
+      let saved = draft;
+      if(!state.demoMode && sb){
+        saved = await db.insert('goals', draft);
+      } else {
+        saved = {...draft, id:'local-'+Date.now()};
+      }
+      state.goals.push(saved);
+      const st = engine.goalStatus(saved);
+      toast(st.ok ? 'هدف قابل للتحقيق ✓' : 'تنبيه: هذا الهدف يحتاج تعديل خطة', !st.ok);
+    }
+    app.closeModal('modalGoal');
+    app.renderGoals(); app.renderDashboard();
+  } catch(err){ dbErrorToast(err); }
+});
+
+document.getElementById('depositForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const goalId = document.getElementById('deposit-goal-id').value;
+  const amount = parseFloat(document.getElementById('deposit-amount').value.replace(/,/g,''));
+  if(!amount || amount<=0) { toast('فضلاً أدخل مبلغاً صحيحاً', true); return; }
+  const g = state.goals.find(x=>String(x.id)===String(goalId));
+  if(!g) return;
+  const prevCurrent = g.current;
+  g.current += amount;
+  g.deposits = g.deposits || [];
+  g.deposits.push({amount, monthIdx:CUR_MONTH_IDX});
+  try{
+    if(!state.demoMode && sb) await db.update('goals', g.id, g);
+    toast('تم تسجيل الإيداع، تقدمك الآن ' + Math.min(100,Math.round((g.current/g.target)*100)) + '%');
+    app.closeModal('modalDeposit');
+    app.renderGoals(); app.renderDashboard();
+  } catch(err){
+    g.current = prevCurrent; g.deposits.pop();
+    dbErrorToast(err);
+  }
+});
+
+document.getElementById('profileForm') && document.getElementById('profileForm').addEventListener('submit', function(e){ e.preventDefault(); });
+
+/* =========================================================================
+   GLOBAL EVENT DELEGATION
+   One listener handles every data-action in the app (nav links, list-item
+   edit/delete buttons, modal open/close, chips...) instead of inline
+   onclick="..." attributes scattered through the markup and rebuilt with
+   raw user data on every re-render.
+========================================================================= */
+document.addEventListener('click', function(e){
+  const el = e.target.closest('[data-action]');
+  if(!el) return;
+  const id = el.dataset.id;
+  switch(el.dataset.action){
+    case 'go': router.go(el.dataset.route); break;
+    case 'demoLogin': app.demoLogin(); break;
+    case 'logout': app.logout(); break;
+    case 'selectOnbFreq': app.selectOnbFreq(el); break;
+    case 'completeOnboarding': app.completeOnboarding(); break;
+    case 'openIncomeModal': app.openIncomeModal(); break;
+    case 'openExpenseModal': app.openExpenseModal(); break;
+    case 'openGoalModal': app.openGoalModal(); break;
+    case 'filterExpenses': app.filterExpenses(el); break;
+    case 'saveProfile': app.saveProfile(); break;
+    case 'closeModal': app.closeModal(el.dataset.modal); break;
+    case 'selectChip': app.selectChip(el, el.dataset.target); break;
+    case 'editIncome': app.editIncome(id); break;
+    case 'deleteIncome': app.deleteIncome(id); break;
+    case 'editExpense': app.editExpense(id); break;
+    case 'deleteExpense': app.deleteExpense(id); break;
+    case 'editGoal': app.editGoal(id); break;
+    case 'deleteGoal': app.deleteGoal(id); break;
+    case 'openDepositModal': app.openDepositModal(id); break;
+  }
+});
+// clicking a modal's dark backdrop closes it too
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.add('hidden'); });
+});
+
+/* =========================================================================
+   INIT
+========================================================================= */
+async function boot(){
+  // hero path visual (static preview on the landing page)
+  renderGoalPath(document.getElementById('heroPath'), 62, 14);
+
+  // Chart.js comes from a CDN and can fail to load (network issue, ad/
+  // tracking blockers, offline testing...). That must NEVER stop the rest
+  // of boot() — routing and session restore have to run either way, or the
+  // whole app looks "stuck" on a blank page.
+  try{
+    const landingCtx = document.getElementById('landingChart');
+    if(landingCtx && typeof Chart !== 'undefined'){
+      Chart.defaults.font.family = "'IBM Plex Sans Arabic',sans-serif";
+      Chart.defaults.color = '#8D93BC';
+      safeChart(landingCtx.getContext('2d'), {
+        type:'line',
+        data:{labels:['يناير','فبراير','مارس','أبريل','مايو','يونيو'],
+          datasets:[{data:[2100,3400,2900,4100,3800,4350], borderColor:'#D9A441', backgroundColor:'rgba(217,164,65,.12)', fill:true, tension:.4, pointRadius:0}]},
+        options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
+      });
+    } else if(landingCtx){
+      console.error('تعذّر تحميل مكتبة Chart.js من الشبكة — الرسم البياني في الصفحة الرئيسية لن يظهر، لكن باقي التطبيق يعمل بشكل طبيعي.');
+    }
+  } catch(err){
+    console.error('فشل رسم مخطط الصفحة الرئيسية:', err);
+  }
+
+  if(!sb){
+    // Visible banner, not just a console.error — a missing/misconfigured
+    // config.js should be obvious to whoever is testing the deployment,
+    // not something only developers notice by opening devtools.
+    const banner = document.createElement('div');
+    banner.textContent = '⚠ لم يتم إعداد الاتصال بقاعدة البيانات بعد — أنشئ config.js من config.example.js وضع فيه رابط ومفتاح مشروع Supabase (راجع README.md).';
+    banner.style.cssText = 'position:fixed;top:0;right:0;left:0;z-index:9999;background:#E2604F;color:#fff;padding:10px 16px;text-align:center;font-size:14px;font-family:inherit;';
+    document.body.prepend(banner);
+  } else {
+    try{
+      // Restore an existing session (JWT kept by supabase-js in localStorage
+      // under its own key) so a page refresh doesn't log the user out.
+      const {data:{session}} = await sb.auth.getSession();
+      if(session){
+        state.session = session;
+        try { await db.loadAll(); } catch(err){ console.error(err); }
+      }
+      sb.auth.onAuthStateChange((event, session) => {
+        if(event === 'SIGNED_OUT'){ state.session = null; }
+      });
+    } catch(err){
+      console.error('فشل استعادة الجلسة:', err);
+    }
+  }
+
+  router.render(router.parseHash());
+}
+window.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
