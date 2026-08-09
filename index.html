@@ -308,28 +308,89 @@ footer.site-footer{border-top:1px solid var(--line);padding:26px 4px;display:fle
 
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
 
-/* Responsive */
+/* ============ RESPONSIVE (phone / tablet / laptop) ============ */
+
+/* Laptop / small desktop */
 @media (max-width:1080px){
   .hero{grid-template-columns:1fr;}
   .feature-grid{grid-template-columns:1fr 1fr;}
-  .formula-band{grid-template-columns:1fr;}
+  .formula-band{grid-template-columns:1fr;padding:32px;}
   .mock-dash .md-grid{grid-template-columns:1fr 1fr;}
   .grid-2{grid-template-columns:1fr;}
-  .kpi-grid{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
   #view-app{grid-template-columns:1fr;}
-  .sidebar{position:relative;height:auto;flex-direction:row;align-items:center;overflow-x:auto;}
-  .sidebar .brand{padding:6px 14px 6px 0;}
-  .side-nav{flex-direction:row;}
+  .sidebar{
+    position:sticky;top:0;z-index:80;height:auto;
+    flex-direction:row;align-items:center;gap:4px;
+    padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+    border-left:none;border-bottom:1px solid var(--line);
+  }
+  .sidebar::-webkit-scrollbar{display:none;}
+  .sidebar .brand{padding:0 16px 0 0;flex-shrink:0;}
+  .side-nav{flex-direction:row;flex:1;min-width:0;}
+  .side-link{white-space:nowrap;flex-shrink:0;padding:10px 14px;}
+  /* logout/profile stay reachable — "الملف الشخصي" is already a nav item,
+     and the profile page itself now has its own logout button, so hiding
+     the footer here no longer strands mobile/tablet users. */
   .side-foot{display:none;}
   .auth-shell{grid-template-columns:1fr;}
   .auth-side{display:none;}
+  .auth-form-col{padding:48px 36px;max-width:520px;}
   .profile-grid{grid-template-columns:1fr;}
 }
+
+/* Tablet (iPad portrait and similar) */
+@media (max-width:820px){
+  .main-area{padding:26px 22px 50px;}
+  .landing-nav .links{display:none;}
+  .topbar{flex-wrap:wrap;gap:12px;}
+  .list-toolbar{flex-wrap:wrap;}
+  .list-toolbar > .btn{width:100%;}
+  #view-landing{padding:22px 18px 60px;}
+}
+
+/* Phone */
 @media (max-width:640px){
+  html{font-size:15px;}
   .feature-grid{grid-template-columns:1fr;}
-  .hero h1{font-size:36px;}
-  .main-area{padding:24px 16px 50px;}
+  .mock-dash .md-grid{grid-template-columns:1fr;}
+  .hero h1{font-size:30px;line-height:1.25;}
+  .hero p.lead{font-size:15.5px;}
+  .section-head h2{font-size:24px;}
+  .main-area{padding:18px 14px 44px;}
   .field-row{grid-template-columns:1fr;}
+  .auth-form-col{padding:32px 20px;}
+  .onb-card{padding:30px 22px;}
+  .modal-overlay{padding:12px;}
+  .modal{padding:22px 18px;max-height:92vh;}
+  .kpi-grid{grid-template-columns:1fr;}
+  .kpi-card .kc-val{font-size:25px;}
+  .goal-card{padding:18px;}
+  .goal-card .gc-top{flex-wrap:wrap;gap:10px;}
+  .goal-actions{flex-wrap:wrap;}
+  .goal-actions .btn{flex:1;min-width:100px;}
+  .item-row{flex-wrap:wrap;padding:14px;gap:10px;}
+  .item-row .ir-main{flex-basis:100%;order:1;}
+  .item-row .ir-amount{order:2;}
+  .item-row .ir-actions{order:3;margin-inline-start:auto;}
+  .icon-btn{width:36px;height:36px;}
+  .chart-box{height:200px;}
+  .chart-box.tall{height:230px;}
+  .month-pill{font-size:12px;padding:8px 13px;}
+  .topbar h1{font-size:21px;}
+  .cta-row{flex-direction:column;align-items:stretch;}
+  .cta-row .btn{width:100%;}
+  .landing-nav{padding-bottom:36px;}
+  .landing-nav > div:last-child{gap:6px;}
+  .landing-nav .btn-sm{padding:8px 12px;font-size:12.5px;}
+}
+
+/* Very small phones */
+@media (max-width:380px){
+  .side-link{padding:9px 10px;font-size:13px;}
+  .side-link svg{width:17px;height:17px;}
+  .kpi-card .kc-val{font-size:22px;}
+  .goal-nums{gap:16px;}
 }
 </style>
 </head>
@@ -718,7 +779,8 @@ footer.site-footer{border-top:1px solid var(--line);padding:26px 4px;display:fle
           <h3>ملخص الحساب</h3>
           <div class="item-row" style="margin-bottom:10px;"><div class="ir-main"><div class="ir-title">مصادر الدخل</div></div><div class="ir-amount num" id="profCountIncome">0</div></div>
           <div class="item-row" style="margin-bottom:10px;"><div class="ir-main"><div class="ir-title">المصاريف المسجّلة</div></div><div class="ir-amount num" id="profCountExpense">0</div></div>
-          <div class="item-row"><div class="ir-main"><div class="ir-title">الأهداف النشطة</div></div><div class="ir-amount num" id="profCountGoals">0</div></div>
+          <div class="item-row" style="margin-bottom:18px;"><div class="ir-main"><div class="ir-title">الأهداف النشطة</div></div><div class="ir-amount num" id="profCountGoals">0</div></div>
+          <button class="btn btn-danger btn-block" data-action="logout">تسجيل الخروج</button>
         </div>
       </div>
     </section>
